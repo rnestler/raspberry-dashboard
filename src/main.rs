@@ -1,23 +1,7 @@
 use chrono::Local;
 use rand::Rng;
 
-slint::slint! {
-    export component Dashboard inherits Window {
-        in property <string> current-time: "00:00:00";
-        in property <length> time-x: 0px;
-        in property <length> time-y: 0px;
-
-        background: black;
-
-        Text {
-            x: root.time-x;
-            y: root.time-y;
-            text: root.current-time;
-            color: white;
-            font-size: 64px;
-        }
-    }
-}
+slint::include_modules!();
 
 fn main() {
     let dashboard = Dashboard::new().unwrap();

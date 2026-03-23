@@ -3,10 +3,15 @@ name = "raspberry-dashboard"
 version = "0.1.0"
 edition = "2024"
 
+[features]
+default = ["backend-default"]
+backend-linuxkms-noseat = ["slint/backend-linuxkms-noseat"]
+backend-default = ["slint/backend-default"]
+
 [build-dependencies]
 slint-build = "1"
 
 [dependencies]
-slint = "1"
+slint = { version = "1", default-features = false, features = ["compat-1-2", "std", "renderer-femtovg"] }
 chrono = "0.4"
 rand = "0.9"

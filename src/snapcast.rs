@@ -1,6 +1,9 @@
 use std::net::SocketAddr;
 
-use snapcast_control::{SnapcastConnection, State, stream::{Stream, StreamStatus}};
+use snapcast_control::{
+    SnapcastConnection, State,
+    stream::{Stream, StreamStatus},
+};
 use std::sync::Arc;
 
 #[derive(Debug, Clone, Default, serde::Deserialize)]

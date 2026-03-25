@@ -1,6 +1,6 @@
 use std::net::SocketAddr;
 
-use snapcast_control::{SnapcastConnection, State};
+use snapcast_control::{SnapcastConnection, State, stream::Stream};
 use std::sync::Arc;
 
 #[derive(Debug, Clone, Default, serde::Deserialize)]
@@ -11,18 +11,20 @@ pub struct NowPlayingInfo {
     pub album: Option<String>,
 }
 
+fn get_now_playing_info(stream: Option<&Stream>) -> Option<NowPlayingInfo> {
+    if let Some(metadata) = &stream?.properties.as_ref()?.metadata
+        && let Ok(value) = serde_json::to_value(metadata)
+        && let Ok(info) = serde_json::from_value::<NowPlayingInfo>(value)
+    {
+        return Some(info);
+    }
+    None
+}
+
 fn extract_now_playing(state: &Arc<State>) -> NowPlayingInfo {
     for entry in state.streams.iter() {
-        if let Some(stream) = entry.value() {
-            if let Some(props) = &stream.properties {
-                if let Some(metadata) = &props.metadata {
-                    if let Ok(value) = serde_json::to_value(metadata) {
-                        if let Ok(info) = serde_json::from_value::<NowPlayingInfo>(value) {
-                            return info;
-                        }
-                    }
-                }
-            }
+        if let Some(info) = get_now_playing_info(entry.value().as_ref()) {
+            return info;
         }
     }
     NowPlayingInfo::default()

@@ -1,13 +1,17 @@
 use chrono::Local;
 use rand::Rng;
 
+mod config;
+mod homeassistant;
 mod snapcast;
 
 slint::include_modules!();
 
-const WIDGET_COUNT: i32 = 2;
+const WIDGET_COUNT: i32 = 3;
 
 fn main() {
+    let config = config::load_config();
+
     let dashboard = Dashboard::new().unwrap();
 
     let now = Local::now();
@@ -75,7 +79,7 @@ fn main() {
         },
     );
 
-    // Snapcast client in background thread
+    // Snapcast client in background thread (SnapcastConnection is not Send)
     let snapcast_addr: std::net::SocketAddr = std::env::var("SNAPCAST_HOST")
         .unwrap_or_else(|_| "127.0.0.1:1705".to_string())
         .parse()
@@ -90,6 +94,17 @@ fn main() {
             }
         });
     });
+
+    // HomeAssistant polling in a separate background thread
+    if let Some(ha_config) = config.homeassistant {
+        let ui_handle = dashboard.as_weak();
+        std::thread::spawn(move || {
+            let rt = tokio::runtime::Runtime::new().unwrap();
+            rt.block_on(homeassistant::run_homeassistant_client(
+                ha_config, ui_handle,
+            ));
+        });
+    }
 
     dashboard.run().unwrap();
 }

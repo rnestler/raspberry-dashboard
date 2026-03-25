@@ -43,6 +43,7 @@ export component Dashboard inherits Window {
     }
 
     if root.current-widget == 1: NowPlayingWidget {
+        current-time: root.current-time;
         track-title: root.track-title;
         track-artist: root.track-artist;
         track-album: root.track-album;

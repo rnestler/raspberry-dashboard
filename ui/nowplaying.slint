@@ -2,12 +2,21 @@ export component NowPlayingWidget inherits Rectangle {
     in property <string> track-title: "";
     in property <string> track-artist: "";
     in property <string> track-album: "";
+    in property <string> current-time: "00:00:00";
     in property <string> connection-status: "disconnected";
     in property <image> art-image;
 
     VerticalLayout {
-        alignment: center;
         padding: 40px;
+
+        Text {
+            text: root.current-time;
+            color: white;
+            font-size: 48px;
+            horizontal-alignment: center;
+        }
+
+        Rectangle { vertical-stretch: 1; }
 
         if root.connection-status != "connected": Text {
             text: root.connection-status;
@@ -54,5 +63,7 @@ export component NowPlayingWidget inherits Rectangle {
                 }
             }
         }
+
+        Rectangle { vertical-stretch: 1; }
     }
 }

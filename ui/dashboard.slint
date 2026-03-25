@@ -41,10 +41,9 @@ export component Dashboard inherits Window {
         }
     }
 
-    if root.current-widget == 0: ClockWidget {
+    if root.current-widget == 0: HomeAssistantWidget {
         current-time: root.current-time;
-        time-x: root.time-x;
-        time-y: root.time-y;
+        sensors: root.sensors;
     }
 
     if root.current-widget == 1: NowPlayingWidget {
@@ -56,8 +55,9 @@ export component Dashboard inherits Window {
         connection-status: root.connection-status;
     }
 
-    if root.current-widget == 2: HomeAssistantWidget {
+    if root.current-widget == 2: ClockWidget {
         current-time: root.current-time;
-        sensors: root.sensors;
+        time-x: root.time-x;
+        time-y: root.time-y;
     }
 }

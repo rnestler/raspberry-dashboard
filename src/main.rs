@@ -22,6 +22,14 @@ fn main() {
         }
     });
 
+    // Quit via "q"
+    let weak = dashboard.as_weak();
+    dashboard.on_quit(move || {
+        if let Some(d) = weak.upgrade() {
+            d.hide().unwrap();
+        }
+    });
+
     // Randomize position every 5 seconds
     let weak = dashboard.as_weak();
     let position_timer = slint::Timer::default();

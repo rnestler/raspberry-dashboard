@@ -16,6 +16,7 @@ export component Dashboard inherits Window {
     in property <string> connection-status: "disconnected";
 
     callback next-widget();
+    callback quit();
 
     background: black;
     forward-focus: focus-scope;
@@ -24,6 +25,10 @@ export component Dashboard inherits Window {
         key-pressed(event) => {
             if event.text == Key.Tab {
                 root.next-widget();
+                return accept;
+            }
+            if event.text == "q" {
+                root.quit();
                 return accept;
             }
             return reject;

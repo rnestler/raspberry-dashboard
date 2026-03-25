@@ -1,13 +1,26 @@
 use chrono::Local;
 use rand::Rng;
 
+mod snapcast;
+
 slint::include_modules!();
+
+const WIDGET_COUNT: i32 = 2;
 
 fn main() {
     let dashboard = Dashboard::new().unwrap();
 
     let now = Local::now();
     dashboard.set_current_time(now.format("%H:%M:%S").to_string().into());
+
+    // Widget switching via TAB
+    let weak = dashboard.as_weak();
+    dashboard.on_next_widget(move || {
+        if let Some(d) = weak.upgrade() {
+            let current = d.get_current_widget();
+            d.set_current_widget((current + 1) % WIDGET_COUNT);
+        }
+    });
 
     // Randomize position every 5 seconds
     let weak = dashboard.as_weak();
@@ -53,6 +66,22 @@ fn main() {
             dashboard.set_current_time(now.format("%H:%M:%S").to_string().into());
         },
     );
+
+    // Snapcast client in background thread
+    let snapcast_addr: std::net::SocketAddr = std::env::var("SNAPCAST_HOST")
+        .unwrap_or_else(|_| "127.0.0.1:1705".to_string())
+        .parse()
+        .expect("invalid SNAPCAST_HOST address");
+    let ui_handle = dashboard.as_weak();
+    std::thread::spawn(move || {
+        let rt = tokio::runtime::Runtime::new().unwrap();
+        rt.block_on(async {
+            loop {
+                snapcast::run_snapcast_client(snapcast_addr, ui_handle.clone()).await;
+                tokio::time::sleep(std::time::Duration::from_secs(5)).await;
+            }
+        });
+    });
 
     dashboard.run().unwrap();
 }

@@ -1,15 +1,45 @@
+import { ClockWidget } from "clock.slint";
+import { NowPlayingWidget } from "nowplaying.slint";
+
 export component Dashboard inherits Window {
+    in property <int> current-widget: 0;
+
+    // Clock widget properties
     in property <string> current-time: "00:00:00";
     in property <length> time-x: 0px;
     in property <length> time-y: 0px;
 
-    background: black;
+    // Now-playing widget properties
+    in property <string> track-title: "";
+    in property <string> track-artist: "";
+    in property <string> track-album: "";
+    in property <string> connection-status: "disconnected";
 
-    Text {
-        x: root.time-x;
-        y: root.time-y;
-        text: root.current-time;
-        color: white;
-        font-size: 64px;
+    callback next-widget();
+
+    background: black;
+    forward-focus: focus-scope;
+
+    focus-scope := FocusScope {
+        key-pressed(event) => {
+            if event.text == Key.Tab {
+                root.next-widget();
+                return accept;
+            }
+            return reject;
+        }
+    }
+
+    if root.current-widget == 0: ClockWidget {
+        current-time: root.current-time;
+        time-x: root.time-x;
+        time-y: root.time-y;
+    }
+
+    if root.current-widget == 1: NowPlayingWidget {
+        track-title: root.track-title;
+        track-artist: root.track-artist;
+        track-album: root.track-album;
+        connection-status: root.connection-status;
     }
 }

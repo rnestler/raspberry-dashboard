@@ -9,6 +9,7 @@ pub struct NowPlayingInfo {
     pub title: Option<String>,
     pub artist: Option<Vec<String>>,
     pub album: Option<String>,
+    pub art_url: Option<String>,
 }
 
 fn get_now_playing_info(stream: Option<&Stream>) -> Option<NowPlayingInfo> {
@@ -34,10 +35,23 @@ fn extract_now_playing(state: &Arc<State>) -> NowPlayingInfo {
     NowPlayingInfo::default()
 }
 
-fn push_to_ui(ui_handle: &slint::Weak<crate::Dashboard>, info: &NowPlayingInfo, status: &str) {
+async fn fetch_art_bytes(url: &str) -> Option<Vec<u8>> {
+    let bytes = reqwest::get(url).await.ok()?.bytes().await.ok()?;
+    Some(bytes.to_vec())
+}
+
+async fn push_to_ui(
+    ui_handle: &slint::Weak<crate::Dashboard>,
+    info: &NowPlayingInfo,
+    status: &str,
+) {
     let handle = ui_handle.clone();
     let info = info.clone();
     let status = status.to_string();
+    let art_bytes = match &info.art_url {
+        Some(url) => fetch_art_bytes(url).await,
+        None => None,
+    };
     let _ = slint::invoke_from_event_loop(move || {
         if let Some(dashboard) = handle.upgrade() {
             dashboard.set_track_title(info.title.unwrap_or_default().into());
@@ -48,6 +62,11 @@ fn push_to_ui(ui_handle: &slint::Weak<crate::Dashboard>, info: &NowPlayingInfo, 
                     .into(),
             );
             dashboard.set_track_album(info.album.unwrap_or("Unknown Album".into()).into());
+            let art_image = art_bytes
+                .as_deref()
+                .and_then(|b| slint::Image::load_from_svg_data(b).ok())
+                .unwrap_or_default();
+            dashboard.set_art_image(art_image);
             dashboard.set_connection_status(status.into());
         }
     });
@@ -89,7 +108,7 @@ pub async fn run_snapcast_client(addr: SocketAddr, ui_handle: slint::Weak<crate:
             }
         }
         let info = extract_now_playing(&client.state);
-        push_to_ui(&ui_handle, &info, "connected");
+        push_to_ui(&ui_handle, &info, "connected").await;
     }
 
     // Keep receiving notifications and updating state
@@ -100,7 +119,7 @@ pub async fn run_snapcast_client(addr: SocketAddr, ui_handle: slint::Weak<crate:
             }
         }
         let info = extract_now_playing(&client.state);
-        push_to_ui(&ui_handle, &info, "connected");
+        push_to_ui(&ui_handle, &info, "connected").await;
     }
 
     set_connection_status(&ui_handle, "Disconnected");

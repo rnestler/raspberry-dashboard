@@ -14,6 +14,7 @@ export component Dashboard inherits Window {
     in property <string> track-artist: "";
     in property <string> track-album: "";
     in property <string> connection-status: "disconnected";
+    in property <image> art-image;
 
     callback next-widget();
     callback quit();
@@ -45,6 +46,7 @@ export component Dashboard inherits Window {
         track-title: root.track-title;
         track-artist: root.track-artist;
         track-album: root.track-album;
+        art-image: root.art-image;
         connection-status: root.connection-status;
     }
 }

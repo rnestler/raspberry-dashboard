@@ -13,14 +13,14 @@ component SensorCard inherits Rectangle {
     background: #1a1a1a;
 
     VerticalLayout {
-        padding: 16px;
-        spacing: 8px;
+        padding: 20px;
+        spacing: 10px;
         alignment: center;
 
         Text {
             text: root.label;
             color: #888888;
-            font-size: 20px;
+            font-size: 28px;
             horizontal-alignment: center;
         }
         HorizontalLayout {
@@ -65,16 +65,16 @@ export component HomeAssistantWidget inherits Rectangle {
             horizontal-alignment: center;
         }
 
-        HorizontalLayout {
+        GridLayout {
             spacing: 20px;
-            alignment: center;
+            padding: 20px;
 
-            for sensor in root.sensors: SensorCard {
+            for sensor[i] in root.sensors: SensorCard {
+                row: Math.floor(i / 3);
+                col: Math.mod(i, 3);
                 label: sensor.label;
                 value: sensor.value;
                 unit: sensor.unit;
-                width: 220px;
-                height: 120px;
             }
         }
 

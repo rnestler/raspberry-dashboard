@@ -1,0 +1,33 @@
+name: CI
+on:
+  push:
+    branches: [ "main" ]
+  pull_request:
+    branches: [ "main" ]
+
+jobs:
+  build_and_test:
+    runs-on: ubuntu-24.04-arm
+    container: rnestler/archlinuxarm-rust:1.94.0
+    steps:
+      - uses: actions/checkout@v6
+      - run: pacman -Sy --noconfirm fontconfig libxkbcommon libinput mesa
+      - run: cargo build
+      - run: cargo test
+
+  lint:
+    runs-on: ubuntu-24.04
+    container: rnestler/archlinux-rust:1.94.0
+    steps:
+      - uses: actions/checkout@v6
+      - run: pacman -Sy --noconfirm fontconfig
+      - run: rustup component add clippy
+      - run: cargo clippy --all-targets --all-features -- -D warnings
+
+  fmt:
+    runs-on: ubuntu-24.04
+    container: rnestler/archlinux-rust:1.94.0
+    steps:
+      - uses: actions/checkout@v6
+      - run: rustup component add rustfmt
+      - run: cargo fmt -- --check

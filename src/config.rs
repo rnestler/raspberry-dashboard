@@ -24,8 +24,10 @@ pub fn load_config() -> Config {
     let path = std::env::var("DASHBOARD_CONFIG").unwrap_or_else(|_| "config.toml".to_string());
     let path = Path::new(&path);
     if !path.exists() {
+        log::info!("Config: no config file found at {}", path.display());
         return Config::default();
     }
+    log::info!("Config: loading from {}", path.display());
     let contents = std::fs::read_to_string(path).expect("failed to read config file");
     toml::from_str(&contents).expect("failed to parse config file")
 }

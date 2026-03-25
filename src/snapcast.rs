@@ -112,7 +112,7 @@ pub async fn run_snapcast_client(addr: SocketAddr, ui_handle: slint::Weak<crate:
     if let Some(messages) = client.recv().await {
         for msg in &messages {
             if let Err(e) = msg {
-                eprintln!("snapcast message error: {e}");
+                log::error!("Snapcast message error: {e}");
             }
         }
         let info = extract_now_playing(&client.state);
@@ -123,7 +123,7 @@ pub async fn run_snapcast_client(addr: SocketAddr, ui_handle: slint::Weak<crate:
     while let Some(messages) = client.recv().await {
         for msg in &messages {
             if let Err(e) = msg {
-                eprintln!("snapcast message error: {e}");
+                log::error!("Snapcast message error: {e}");
             }
         }
         let info = extract_now_playing(&client.state);

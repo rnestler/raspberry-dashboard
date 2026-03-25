@@ -10,6 +10,7 @@ slint::include_modules!();
 const WIDGET_COUNT: i32 = 3;
 
 fn main() {
+    env_logger::init();
     let config = config::load_config();
 
     let dashboard = Dashboard::new().unwrap();

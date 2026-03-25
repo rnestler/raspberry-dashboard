@@ -1,0 +1,58 @@
+export component NowPlayingWidget inherits Rectangle {
+    in property <string> track-title: "";
+    in property <string> track-artist: "";
+    in property <string> track-album: "";
+    in property <string> connection-status: "disconnected";
+    in property <image> art-image;
+
+    VerticalLayout {
+        alignment: center;
+        padding: 40px;
+
+        if root.connection-status != "connected": Text {
+            text: root.connection-status;
+            color: #888888;
+            font-size: 32px;
+            horizontal-alignment: center;
+        }
+
+        if root.connection-status == "connected": HorizontalLayout {
+            spacing: 40px;
+            alignment: center;
+
+            Image {
+                source: root.art-image;
+                width: 200px;
+                height: 200px;
+                image-fit: contain;
+            }
+
+            VerticalLayout {
+                spacing: 20px;
+                alignment: center;
+
+                Text {
+                    text: root.track-title != "" ? root.track-title : "No track";
+                    color: white;
+                    font-size: 64px;
+                    horizontal-alignment: left;
+                    overflow: elide;
+                }
+                Text {
+                    text: root.track-artist;
+                    color: #cccccc;
+                    font-size: 40px;
+                    horizontal-alignment: left;
+                    overflow: elide;
+                }
+                Text {
+                    text: root.track-album;
+                    color: #999999;
+                    font-size: 32px;
+                    horizontal-alignment: left;
+                    overflow: elide;
+                }
+            }
+        }
+    }
+}

@@ -37,9 +37,13 @@ fn push_to_ui(ui_handle: &slint::Weak<crate::Dashboard>, info: &NowPlayingInfo, 
     let _ = slint::invoke_from_event_loop(move || {
         if let Some(dashboard) = handle.upgrade() {
             dashboard.set_track_title(info.title.unwrap_or_default().into());
-            dashboard
-                .set_track_artist(info.artist.map(|a| a.join(", ")).unwrap_or_default().into());
-            dashboard.set_track_album(info.album.unwrap_or_default().into());
+            dashboard.set_track_artist(
+                info.artist
+                    .map(|a| a.join(", "))
+                    .unwrap_or("Unknown Artist".into())
+                    .into(),
+            );
+            dashboard.set_track_album(info.album.unwrap_or("Unknown Album".into()).into());
             dashboard.set_connection_status(status.into());
         }
     });

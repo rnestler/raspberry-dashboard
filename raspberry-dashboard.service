@@ -1,10 +1,14 @@
 [Unit]
 Description=Raspberry Dashboard
-After=graphical.target
+After=network-online.target
+Wants=network-online.target
+Conflicts=getty@tty1.service
 
 [Service]
 Type=simple
 User=alarm
+Group=alarm
+SupplementaryGroups=input video
 Environment=SNAPCAST_HOST=127.0.0.1:1705
 Environment=DASHBOARD_CONFIG=/home/alarm/config.toml
 ExecStart=/home/alarm/raspberry-dashboard
@@ -12,4 +16,4 @@ Restart=on-failure
 RestartSec=5
 
 [Install]
-WantedBy=multi-user.target
+Alias=display-manager.service

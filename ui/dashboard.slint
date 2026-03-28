@@ -1,5 +1,7 @@
 import { ClockWidget } from "clock.slint";
 import { NowPlayingWidget } from "nowplaying.slint";
+import { HomeAssistantWidget, SensorData } from "homeassistant.slint";
+export { SensorData }
 
 export component Dashboard inherits Window {
     in property <int> current-widget: 0;
@@ -15,6 +17,9 @@ export component Dashboard inherits Window {
     in property <string> track-album: "";
     in property <string> connection-status: "disconnected";
     in property <image> art-image;
+
+    // HomeAssistant widget properties
+    in property <[SensorData]> sensors;
 
     callback next-widget();
     callback quit();
@@ -36,10 +41,9 @@ export component Dashboard inherits Window {
         }
     }
 
-    if root.current-widget == 0: ClockWidget {
+    if root.current-widget == 0: HomeAssistantWidget {
         current-time: root.current-time;
-        time-x: root.time-x;
-        time-y: root.time-y;
+        sensors: root.sensors;
     }
 
     if root.current-widget == 1: NowPlayingWidget {
@@ -49,5 +53,11 @@ export component Dashboard inherits Window {
         track-album: root.track-album;
         art-image: root.art-image;
         connection-status: root.connection-status;
+    }
+
+    if root.current-widget == 2: ClockWidget {
+        current-time: root.current-time;
+        time-x: root.time-x;
+        time-y: root.time-y;
     }
 }

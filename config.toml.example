@@ -1,0 +1,28 @@
+[homeassistant]
+url = "http://homeassistant.local:8123"
+token = "your-long-lived-access-token"
+poll_interval_secs = 30
+
+[[homeassistant.sensors]]
+entity_id = "sensor.co2_stube"
+label = "CO2 Stube"
+
+[[homeassistant.sensors]]
+entity_id = "sensor.co2_homeoffice"
+label = "CO2 HomeOffice"
+
+[[homeassistant.sensors]]
+entity_id = "sensor.humidity_stube"
+label = "RH Stube"
+
+[[homeassistant.sensors]]
+entity_id = "sensor.humidity_homeoffice"
+label = "RH HomeOffice"
+
+[[homeassistant.sensors]]
+entity_id = "sensor.temperature_stube"
+label = "T Stube"
+
+[[homeassistant.sensors]]
+entity_id = "sensor.temperature_homeoffice"
+label = "T HomeOffice"

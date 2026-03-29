@@ -4027,7 +4027,7 @@ dependencies = [
  "chrono",
  "env_logger",
  "log",
- "rand 0.9.2",
+ "rand 0.10.0",
  "reqwest",
  "serde",
  "serde_json",

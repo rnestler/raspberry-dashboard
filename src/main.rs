@@ -1,5 +1,5 @@
 use chrono::Local;
-use rand::Rng;
+use rand::RngExt;
 
 mod config;
 mod homeassistant;

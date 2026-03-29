@@ -5,6 +5,7 @@ A dashboard for my Raspberry Pi 3B+ connected to a screen.
 Widgets:
 - Clock (screensaver-style, repositions every 5s)
 - Snapcast now-playing (auto-switches when a stream is playing)
+- Home Assistant sensors (displays sensor readings from a Home Assistant instance)
 
 TAB to switch widgets, q to quit.
 
@@ -25,6 +26,11 @@ cross build --target aarch64-unknown-linux-gnu --no-default-features --features 
 ## Configuration
 
 - `SNAPCAST_HOST` — Snapcast server address (default: `127.0.0.1:1705`)
+- `DASHBOARD_CONFIG` — Path to config file (default: `config.toml`)
+
+### Config file
+
+Optional TOML config file for Home Assistant integration. See [config.toml.example](config.toml.example).
 
 ## Deployment
 

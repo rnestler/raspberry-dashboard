@@ -68,11 +68,17 @@ export component Gauge inherits Rectangle {
             // Point on circle at angle a, radius r:
             //   x = cx + r·cos(a)
             //   y = cy − r·sin(a)   (screen Y increases downward)
+            //
+            // All Path elements share the same viewBox (0, 0, w, h) so that
+            // Slint does not independently scale each segment by its own bounding
+            // box — that would misalign the segments.
 
             // ── Blue zone (min → threshold1) ──────────────────────────────────
             Path {
                 width: parent.width;
                 height: parent.height;
+                viewbox-x: 0; viewbox-y: 0;
+                viewbox-width: arc.w; viewbox-height: arc.h;
                 fill: #2196F3;
                 stroke: transparent;
                 MoveTo {
@@ -102,6 +108,8 @@ export component Gauge inherits Rectangle {
             Path {
                 width: parent.width;
                 height: parent.height;
+                viewbox-x: 0; viewbox-y: 0;
+                viewbox-width: arc.w; viewbox-height: arc.h;
                 fill: #4CAF50;
                 stroke: transparent;
                 MoveTo {
@@ -131,6 +139,8 @@ export component Gauge inherits Rectangle {
             Path {
                 width: parent.width;
                 height: parent.height;
+                viewbox-x: 0; viewbox-y: 0;
+                viewbox-width: arc.w; viewbox-height: arc.h;
                 fill: #FF9800;
                 stroke: transparent;
                 MoveTo {
@@ -160,6 +170,8 @@ export component Gauge inherits Rectangle {
             Path {
                 width: parent.width;
                 height: parent.height;
+                viewbox-x: 0; viewbox-y: 0;
+                viewbox-width: arc.w; viewbox-height: arc.h;
                 fill: #F44336;
                 stroke: transparent;
                 MoveTo {
@@ -189,6 +201,8 @@ export component Gauge inherits Rectangle {
             Path {
                 width: parent.width;
                 height: parent.height;
+                viewbox-x: 0; viewbox-y: 0;
+                viewbox-width: arc.w; viewbox-height: arc.h;
                 fill: transparent;
                 stroke: white;
                 stroke-width: 3px;

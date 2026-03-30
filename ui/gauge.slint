@@ -4,6 +4,7 @@
 // The three threshold values define the boundaries between zones.
 // Center is at the bottom of the arc area; the arc sweeps left→top→right.
 export component Gauge inherits Rectangle {
+    height: 300px;
     in property <string> label: "";
     in property <string> value: "0";
     in property <string> unit: "";
@@ -20,21 +21,17 @@ export component Gauge inherits Rectangle {
 
     VerticalLayout {
         padding: 12px;
-        spacing: 6px;
-        alignment: center;
 
         // ── Arc area ─────────────────────────────────────────────────────────
         // Height is exactly half the width so the semicircle fits perfectly.
         arc := Rectangle {
-            height: self.width / 2;
-
             // ── Geometry (all in logical pixels, unitless floats) ─────────────
             property <float> w: self.width / 1px;
             property <float> h: self.height / 1px;
             // Centre of the full circle sits at the bottom-centre of this rect.
             property <float> cx: self.w / 2;
             property <float> cy: self.h;
-            property <float> ro: self.h * 0.93;   // outer radius
+            property <float> ro: self.h;   // outer radius
             property <float> ri: self.h * 0.55;   // inner radius (donut hole)
 
             // ── Normalised fractions for each threshold / current value ───────
@@ -216,24 +213,23 @@ export component Gauge inherits Rectangle {
                 }
             }
 
-            // ── Value text (inside the donut hole) ───────────────────────────
-            Text {
-                x: 0;
-                y: parent.height * 0.58;
+            VerticalLayout {
+                height: parent.height * 0.4;
+                y: parent.height * 0.6;
                 width: parent.width;
-                text: root.value + " " + root.unit;
-                color: white;
-                font-size: 28px;
-                horizontal-alignment: center;
+                Text {
+                    text: root.value + " " + root.unit;
+                    color: white;
+                    font-size: 28px;
+                    horizontal-alignment: center;
+                }
+                Text {
+                    text: root.label;
+                    color: #888888;
+                    font-size: 26px;
+                    horizontal-alignment: center;
+                }
             }
-        }
-
-        // ── Label (below the arc) ─────────────────────────────────────────────
-        Text {
-            text: root.label;
-            color: #888888;
-            font-size: 22px;
-            horizontal-alignment: center;
         }
     }
 }

@@ -18,6 +18,15 @@ pub struct HomeAssistantConfig {
 pub struct SensorConfig {
     pub entity_id: String,
     pub label: String,
+    /// Display type: "gauge" or omit for the plain card.
+    pub sensor_type: Option<String>,
+    /// Gauge: minimum value of the range.
+    pub min: Option<f32>,
+    /// Gauge: maximum value of the range.
+    pub max: Option<f32>,
+    /// Gauge: exactly three ascending threshold values that define the
+    /// boundaries between the blue/green, green/orange, and orange/red zones.
+    pub thresholds: Option<Vec<f32>>,
 }
 
 pub fn load_config() -> Config {

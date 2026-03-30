@@ -1,9 +1,20 @@
+import { Gauge } from "gauge.slint";
+
 export struct SensorData {
     label: string,
     value: string,
     unit: string,
+    // Gauge fields (only meaningful when is-gauge = true)
+    is-gauge: bool,
+    min-value: float,
+    max-value: float,
+    current-value: float,
+    threshold1: float,
+    threshold2: float,
+    threshold3: float,
 }
 
+// Plain card display (non-gauge sensors)
 component SensorCard inherits Rectangle {
     in property <string> label;
     in property <string> value;
@@ -42,6 +53,35 @@ component SensorCard inherits Rectangle {
     }
 }
 
+// Switches between Gauge and SensorCard based on sensor.is-gauge
+component SensorDisplay inherits Rectangle {
+    in property <SensorData> sensor;
+
+    background: transparent;
+
+    if sensor.is-gauge: Gauge {
+        width: parent.width;
+        height: parent.height;
+        label: sensor.label;
+        value: sensor.value;
+        unit: sensor.unit;
+        min-value: sensor.min-value;
+        max-value: sensor.max-value;
+        current-value: sensor.current-value;
+        threshold1: sensor.threshold1;
+        threshold2: sensor.threshold2;
+        threshold3: sensor.threshold3;
+    }
+
+    if !sensor.is-gauge: SensorCard {
+        width: parent.width;
+        height: parent.height;
+        label: sensor.label;
+        value: sensor.value;
+        unit: sensor.unit;
+    }
+}
+
 export component HomeAssistantWidget inherits Rectangle {
     in property <string> current-time: "00:00:00";
     in property <[SensorData]> sensors;
@@ -69,12 +109,10 @@ export component HomeAssistantWidget inherits Rectangle {
             spacing: 20px;
             padding: 20px;
 
-            for sensor[i] in root.sensors: SensorCard {
+            for sensor[i] in root.sensors: SensorDisplay {
                 row: Math.floor(i / 3);
                 col: Math.mod(i, 3);
-                label: sensor.label;
-                value: sensor.value;
-                unit: sensor.unit;
+                sensor: sensor;
             }
         }
 

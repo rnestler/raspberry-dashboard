@@ -197,7 +197,7 @@ export component Gauge inherits Rectangle {
                 Close {}
             }
 
-            // ── Needle ────────────────────────────────────────────────────────
+            // ── Needle (in the donut band only, above the value text) ─────────
             Path {
                 width: parent.width;
                 height: parent.height;
@@ -207,23 +207,13 @@ export component Gauge inherits Rectangle {
                 stroke: white;
                 stroke-width: 3px;
                 MoveTo {
-                    x: arc.cx;
-                    y: arc.cy;
+                    x: arc.cx + arc.ri * Math.cos(arc.an);
+                    y: arc.cy - arc.ri * Math.sin(arc.an);
                 }
                 LineTo {
                     x: arc.cx + arc.ro * 0.9 * Math.cos(arc.an);
                     y: arc.cy - arc.ro * 0.9 * Math.sin(arc.an);
                 }
-            }
-
-            // ── Centre pivot dot ─────────────────────────────────────────────
-            Rectangle {
-                width: 10px;
-                height: 10px;
-                x: (parent.width - self.width) / 2;
-                y: parent.height - self.height;
-                border-radius: 5px;
-                background: white;
             }
 
             // ── Value text (inside the donut hole) ───────────────────────────

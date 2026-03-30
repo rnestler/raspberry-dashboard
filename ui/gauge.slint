@@ -1,0 +1,235 @@
+// Semicircular (180°) gauge with 4 configurable color zones.
+//
+// Color zones left → right: blue → green → orange → red.
+// The three threshold values define the boundaries between zones.
+// Center is at the bottom of the arc area; the arc sweeps left→top→right.
+export component Gauge inherits Rectangle {
+    height: 300px;
+    in property <string> label: "";
+    in property <string> value: "0";
+    in property <string> unit: "";
+    // Numeric range and thresholds (float)
+    in property <float> min-value: 0;
+    in property <float> max-value: 100;
+    in property <float> current-value: 0;
+    in property <float> threshold1: 25;  // blue  / green  boundary
+    in property <float> threshold2: 50;  // green / orange boundary
+    in property <float> threshold3: 75;  // orange/ red    boundary
+
+    background: #1a1a1a;
+    border-radius: 8px;
+
+    VerticalLayout {
+        padding: 12px;
+
+        // ── Arc area ─────────────────────────────────────────────────────────
+        // Height is exactly half the width so the semicircle fits perfectly.
+        arc := Rectangle {
+            // ── Geometry (all in logical pixels, unitless floats) ─────────────
+            property <float> w: self.width / 1px;
+            property <float> h: self.height / 1px;
+            // Centre of the full circle sits at the bottom-centre of this rect.
+            property <float> cx: self.w / 2;
+            property <float> cy: self.h;
+            property <float> ro: self.h;   // outer radius
+            property <float> ri: self.h * 0.55;   // inner radius (donut hole)
+
+            // ── Normalised fractions for each threshold / current value ───────
+            property <float> range: (root.max-value - root.min-value) > 0
+                ? (root.max-value - root.min-value) : 1.0;
+            property <float> f1: Math.clamp((root.threshold1 - root.min-value) / self.range, 0, 1);
+            property <float> f2: Math.clamp((root.threshold2 - root.min-value) / self.range, 0, 1);
+            property <float> f3: Math.clamp((root.threshold3 - root.min-value) / self.range, 0, 1);
+            property <float> fn: Math.clamp((root.current-value - root.min-value) / self.range, 0, 1);
+
+            // ── Angles as angle type (radians) ────────────────────────────────
+            // Mapping: value=min → angle π (left, 9 o'clock)
+            //          value=max → angle 0 (right, 3 o'clock)
+            //   angle(f) = π × (1 − f)  rad
+            property <angle> a0: 3.14159265rad;
+            property <angle> a1: 3.14159265rad * (1.0 - self.f1);
+            property <angle> a2: 3.14159265rad * (1.0 - self.f2);
+            property <angle> a3: 3.14159265rad * (1.0 - self.f3);
+            property <angle> a4: 0rad;
+            property <angle> an: 3.14159265rad * (1.0 - self.fn);
+
+            // ── Arc segment helper ─────────────────────────────────────────────
+            // A donut slice from angle a_s to a_e (a_s > a_e, i.e. left → right):
+            //   1. MoveTo  outer point at a_s
+            //   2. ArcTo   outer point at a_e   (sweep: true  = clockwise on screen)
+            //   3. LineTo  inner point at a_e
+            //   4. ArcTo   inner point at a_s   (sweep: false = counter-clockwise)
+            //   5. Close
+            // large-arc is always false because each segment spans ≤ 180°.
+            //
+            // Point on circle at angle a, radius r:
+            //   x = cx + r·cos(a)
+            //   y = cy − r·sin(a)   (screen Y increases downward)
+            //
+            // All Path elements share the same viewBox (0, 0, w, h) so that
+            // Slint does not independently scale each segment by its own bounding
+            // box — that would misalign the segments.
+
+            // ── Blue zone (min → threshold1) ──────────────────────────────────
+            Path {
+                width: parent.width;
+                height: parent.height;
+                viewbox-x: 0; viewbox-y: 0;
+                viewbox-width: arc.w; viewbox-height: arc.h;
+                fill: #2196F3;
+                stroke: transparent;
+                MoveTo {
+                    x: arc.cx + arc.ro * Math.cos(arc.a0);
+                    y: arc.cy - arc.ro * Math.sin(arc.a0);
+                }
+                ArcTo {
+                    x: arc.cx + arc.ro * Math.cos(arc.a1);
+                    y: arc.cy - arc.ro * Math.sin(arc.a1);
+                    radius-x: arc.ro; radius-y: arc.ro;
+                    sweep: true; large-arc: false;
+                }
+                LineTo {
+                    x: arc.cx + arc.ri * Math.cos(arc.a1);
+                    y: arc.cy - arc.ri * Math.sin(arc.a1);
+                }
+                ArcTo {
+                    x: arc.cx + arc.ri * Math.cos(arc.a0);
+                    y: arc.cy - arc.ri * Math.sin(arc.a0);
+                    radius-x: arc.ri; radius-y: arc.ri;
+                    sweep: false; large-arc: false;
+                }
+                Close {}
+            }
+
+            // ── Green zone (threshold1 → threshold2) ─────────────────────────
+            Path {
+                width: parent.width;
+                height: parent.height;
+                viewbox-x: 0; viewbox-y: 0;
+                viewbox-width: arc.w; viewbox-height: arc.h;
+                fill: #4CAF50;
+                stroke: transparent;
+                MoveTo {
+                    x: arc.cx + arc.ro * Math.cos(arc.a1);
+                    y: arc.cy - arc.ro * Math.sin(arc.a1);
+                }
+                ArcTo {
+                    x: arc.cx + arc.ro * Math.cos(arc.a2);
+                    y: arc.cy - arc.ro * Math.sin(arc.a2);
+                    radius-x: arc.ro; radius-y: arc.ro;
+                    sweep: true; large-arc: false;
+                }
+                LineTo {
+                    x: arc.cx + arc.ri * Math.cos(arc.a2);
+                    y: arc.cy - arc.ri * Math.sin(arc.a2);
+                }
+                ArcTo {
+                    x: arc.cx + arc.ri * Math.cos(arc.a1);
+                    y: arc.cy - arc.ri * Math.sin(arc.a1);
+                    radius-x: arc.ri; radius-y: arc.ri;
+                    sweep: false; large-arc: false;
+                }
+                Close {}
+            }
+
+            // ── Orange zone (threshold2 → threshold3) ────────────────────────
+            Path {
+                width: parent.width;
+                height: parent.height;
+                viewbox-x: 0; viewbox-y: 0;
+                viewbox-width: arc.w; viewbox-height: arc.h;
+                fill: #FF9800;
+                stroke: transparent;
+                MoveTo {
+                    x: arc.cx + arc.ro * Math.cos(arc.a2);
+                    y: arc.cy - arc.ro * Math.sin(arc.a2);
+                }
+                ArcTo {
+                    x: arc.cx + arc.ro * Math.cos(arc.a3);
+                    y: arc.cy - arc.ro * Math.sin(arc.a3);
+                    radius-x: arc.ro; radius-y: arc.ro;
+                    sweep: true; large-arc: false;
+                }
+                LineTo {
+                    x: arc.cx + arc.ri * Math.cos(arc.a3);
+                    y: arc.cy - arc.ri * Math.sin(arc.a3);
+                }
+                ArcTo {
+                    x: arc.cx + arc.ri * Math.cos(arc.a2);
+                    y: arc.cy - arc.ri * Math.sin(arc.a2);
+                    radius-x: arc.ri; radius-y: arc.ri;
+                    sweep: false; large-arc: false;
+                }
+                Close {}
+            }
+
+            // ── Red zone (threshold3 → max) ───────────────────────────────────
+            Path {
+                width: parent.width;
+                height: parent.height;
+                viewbox-x: 0; viewbox-y: 0;
+                viewbox-width: arc.w; viewbox-height: arc.h;
+                fill: #F44336;
+                stroke: transparent;
+                MoveTo {
+                    x: arc.cx + arc.ro * Math.cos(arc.a3);
+                    y: arc.cy - arc.ro * Math.sin(arc.a3);
+                }
+                ArcTo {
+                    x: arc.cx + arc.ro * Math.cos(arc.a4);
+                    y: arc.cy - arc.ro * Math.sin(arc.a4);
+                    radius-x: arc.ro; radius-y: arc.ro;
+                    sweep: true; large-arc: false;
+                }
+                LineTo {
+                    x: arc.cx + arc.ri * Math.cos(arc.a4);
+                    y: arc.cy - arc.ri * Math.sin(arc.a4);
+                }
+                ArcTo {
+                    x: arc.cx + arc.ri * Math.cos(arc.a3);
+                    y: arc.cy - arc.ri * Math.sin(arc.a3);
+                    radius-x: arc.ri; radius-y: arc.ri;
+                    sweep: false; large-arc: false;
+                }
+                Close {}
+            }
+
+            // ── Needle (in the donut band only, above the value text) ─────────
+            Path {
+                width: parent.width;
+                height: parent.height;
+                viewbox-x: 0; viewbox-y: 0;
+                viewbox-width: arc.w; viewbox-height: arc.h;
+                fill: transparent;
+                stroke: white;
+                stroke-width: 3px;
+                MoveTo {
+                    x: arc.cx + arc.ri * Math.cos(arc.an);
+                    y: arc.cy - arc.ri * Math.sin(arc.an);
+                }
+                LineTo {
+                    x: arc.cx + arc.ro * 0.9 * Math.cos(arc.an);
+                    y: arc.cy - arc.ro * 0.9 * Math.sin(arc.an);
+                }
+            }
+
+            VerticalLayout {
+                height: parent.height * 0.4;
+                y: parent.height * 0.6;
+                width: parent.width;
+                Text {
+                    text: root.value + " " + root.unit;
+                    color: white;
+                    font-size: 28px;
+                    horizontal-alignment: center;
+                }
+                Text {
+                    text: root.label;
+                    color: #888888;
+                    font-size: 26px;
+                    horizontal-alignment: center;
+                }
+            }
+        }
+    }
+}

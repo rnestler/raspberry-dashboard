@@ -3,6 +3,7 @@ url = "http://homeassistant.local:8123"
 token = "your-long-lived-access-token"
 poll_interval_secs = 30
 
+# Plain card (default when sensor_type is omitted)
 [[homeassistant.sensors]]
 entity_id = "sensor.co2_stube"
 label = "CO2 Stube"
@@ -11,18 +12,37 @@ label = "CO2 Stube"
 entity_id = "sensor.co2_homeoffice"
 label = "CO2 HomeOffice"
 
+# Gauge display: sensor_type = "gauge" with min, max, and exactly 3 ascending
+# threshold values that define the blue/green, green/orange, orange/red zone
+# boundaries.
 [[homeassistant.sensors]]
 entity_id = "sensor.humidity_stube"
 label = "RH Stube"
+sensor_type = "gauge"
+min = 20.0
+max = 80.0
+thresholds = [30.0, 45.0, 65.0]   # blue<30, green 30-45, orange 45-65, red>65
 
 [[homeassistant.sensors]]
 entity_id = "sensor.humidity_homeoffice"
 label = "RH HomeOffice"
+sensor_type = "gauge"
+min = 20.0
+max = 80.0
+thresholds = [30.0, 45.0, 65.0]
 
 [[homeassistant.sensors]]
 entity_id = "sensor.temperature_stube"
 label = "T Stube"
+sensor_type = "gauge"
+min = 15.0
+max = 30.0
+thresholds = [18.0, 21.0, 25.0]   # blue<18, green 18-21, orange 21-25, red>25
 
 [[homeassistant.sensors]]
 entity_id = "sensor.temperature_homeoffice"
 label = "T HomeOffice"
+sensor_type = "gauge"
+min = 15.0
+max = 30.0
+thresholds = [18.0, 21.0, 25.0]

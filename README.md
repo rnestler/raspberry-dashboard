@@ -41,3 +41,11 @@ sudo systemctl enable --now raspberry-dashboard
 ```
 
 Set `SNAPCAST_HOST` in the `Environment=` line of the service file.
+
+## Screenshots
+
+![Clock widget](./images/clock-widget.png)
+
+![Snapcast widget](./images/snapcast-widget.png)
+
+![Home Assistant widget](./images/homeassistant-widget.png)

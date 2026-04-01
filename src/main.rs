@@ -88,8 +88,8 @@ fn main() {
             let window_width = size.width as f32 / scale;
             let window_height = size.height as f32 / scale;
 
-            let text_width: f32 = 400.0;
-            let text_height: f32 = 80.0;
+            let text_width: f32 = 450.0;
+            let text_height: f32 = 90.0;
 
             let max_x = (window_width - text_width).max(0.0);
             let max_y = (window_height - text_height).max(0.0);

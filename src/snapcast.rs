@@ -47,6 +47,7 @@ async fn push_to_ui(
     ui_handle: &slint::Weak<crate::Dashboard>,
     info: Option<&NowPlayingInfo>,
     status: &str,
+    fallback_widget: i32,
 ) {
     let handle = ui_handle.clone();
     let info = info.cloned();
@@ -73,7 +74,7 @@ async fn push_to_ui(
                 dashboard.set_art_image(art_image);
                 dashboard.set_current_widget(1);
             } else {
-                dashboard.set_current_widget(0);
+                dashboard.set_current_widget(fallback_widget);
             }
             dashboard.set_connection_status(status.into());
         }
@@ -90,7 +91,11 @@ fn set_connection_status(ui_handle: &slint::Weak<crate::Dashboard>, status: &str
     });
 }
 
-pub async fn run_snapcast_client(addr: SocketAddr, ui_handle: slint::Weak<crate::Dashboard>) {
+pub async fn run_snapcast_client(
+    addr: SocketAddr,
+    ui_handle: slint::Weak<crate::Dashboard>,
+    fallback_widget: i32,
+) {
     set_connection_status(&ui_handle, "Connecting...");
 
     let mut client = match SnapcastConnection::open(addr).await {
@@ -116,7 +121,7 @@ pub async fn run_snapcast_client(addr: SocketAddr, ui_handle: slint::Weak<crate:
             }
         }
         let info = extract_now_playing(&client.state);
-        push_to_ui(&ui_handle, info.as_ref(), "connected").await;
+        push_to_ui(&ui_handle, info.as_ref(), "connected", fallback_widget).await;
     }
 
     // Keep receiving notifications and updating state
@@ -127,7 +132,7 @@ pub async fn run_snapcast_client(addr: SocketAddr, ui_handle: slint::Weak<crate:
             }
         }
         let info = extract_now_playing(&client.state);
-        push_to_ui(&ui_handle, info.as_ref(), "connected").await;
+        push_to_ui(&ui_handle, info.as_ref(), "connected", fallback_widget).await;
     }
 
     set_connection_status(&ui_handle, "Disconnected");

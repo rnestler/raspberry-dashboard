@@ -141,11 +141,13 @@ fn main() {
         .parse()
         .expect("invalid SNAPCAST_HOST address");
     let ui_handle = dashboard.as_weak();
+    let fallback_widget = enabled_widgets[0];
     std::thread::spawn(move || {
         let rt = tokio::runtime::Runtime::new().unwrap();
         rt.block_on(async {
             loop {
-                snapcast::run_snapcast_client(snapcast_addr, ui_handle.clone()).await;
+                snapcast::run_snapcast_client(snapcast_addr, ui_handle.clone(), fallback_widget)
+                    .await;
                 tokio::time::sleep(std::time::Duration::from_secs(5)).await;
             }
         });

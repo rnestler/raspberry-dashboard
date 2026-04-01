@@ -1,0 +1,51 @@
+export component DailyVerseWidget inherits Rectangle {
+    in property <string> current-time: "00:00:00";
+    in property <string> verse-text: "";
+    in property <string> verse-reference: "";
+    in property <string> verse-version: "";
+
+    background: black;
+
+    VerticalLayout {
+        padding: 40px;
+
+        Text {
+            text: root.current-time;
+            color: white;
+            font-size: 48px;
+            horizontal-alignment: center;
+        }
+
+        Rectangle { vertical-stretch: 1; }
+
+        VerticalLayout {
+            alignment: center;
+            spacing: 24px;
+
+            Text {
+                text: root.verse-text != "" ? root.verse-text : "Tagesvers wird geladen…";
+                color: white;
+                font-size: 32px;
+                wrap: word-wrap;
+                horizontal-alignment: center;
+            }
+
+            Text {
+                text: root.verse-reference;
+                color: #aaaaaa;
+                font-size: 24px;
+                font-weight: 700;
+                horizontal-alignment: center;
+            }
+
+            Text {
+                text: root.verse-version;
+                color: #666666;
+                font-size: 18px;
+                horizontal-alignment: center;
+            }
+        }
+
+        Rectangle { vertical-stretch: 1; }
+    }
+}

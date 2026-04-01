@@ -4,6 +4,15 @@ use std::path::Path;
 #[derive(Debug, Default, Deserialize)]
 pub struct Config {
     pub homeassistant: Option<HomeAssistantConfig>,
+    pub daily_verse: Option<DailyVerseConfig>,
+    /// Automatically advance to the next enabled widget every N seconds.
+    pub widget_cycle_secs: Option<u64>,
+}
+
+#[derive(Debug, Deserialize)]
+pub struct DailyVerseConfig {
+    /// BibleGateway version ID (e.g. "NGU-DE", "LUTH1912"). Defaults to "NGU-DE".
+    pub version: Option<String>,
 }
 
 #[derive(Debug, Deserialize)]

@@ -132,23 +132,31 @@ export component Gauge inherits Rectangle {
                 color: #F44336;
             }
 
-            // ── Needle (in the donut band only, above the value text) ─────────
+            // ── Needle — filled triangle: pointed tip at outer edge, wider base
+            //    at inner edge spread ±0.08 rad either side of the needle angle.
             Path {
                 width: parent.width;
                 height: parent.height;
                 viewbox-x: 0; viewbox-y: 0;
                 viewbox-width: arc.w; viewbox-height: arc.h;
-                fill: transparent;
-                stroke: white;
-                stroke-width: 3px;
+                fill: white;
+                stroke: transparent;
+                // Tip
                 MoveTo {
-                    x: arc.cx + arc.ri * Math.cos(arc.an);
-                    y: arc.cy - arc.ri * Math.sin(arc.an);
+                    x: arc.cx + arc.ro * 0.92 * Math.cos(arc.an);
+                    y: arc.cy - arc.ro * 0.92 * Math.sin(arc.an);
                 }
+                // Base left
                 LineTo {
-                    x: arc.cx + arc.ro * 0.9 * Math.cos(arc.an);
-                    y: arc.cy - arc.ro * 0.9 * Math.sin(arc.an);
+                    x: arc.cx + arc.ri * Math.cos(arc.an + 0.08rad);
+                    y: arc.cy - arc.ri * Math.sin(arc.an + 0.08rad);
                 }
+                // Base right
+                LineTo {
+                    x: arc.cx + arc.ri * Math.cos(arc.an - 0.08rad);
+                    y: arc.cy - arc.ri * Math.sin(arc.an - 0.08rad);
+                }
+                Close {}
             }
 
             VerticalLayout {

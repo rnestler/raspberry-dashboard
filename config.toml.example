@@ -1,5 +1,9 @@
+# Automatically cycle through enabled widgets every N seconds.
+# TAB also advances the widget and resets this timer.
+# widget_cycle_secs = 30
+
 # Daily verse widget: fetches a verse of the day from BibleGateway once per day.
-# TAB to widget index 3. The widget is only active when this section is present.
+# Only active (and included in the cycle) when this section is present.
 [daily_verse]
 # BibleGateway translation ID. Defaults to NGU-DE (Neue Genfer Übersetzung).
 # Other German options: LUTH1912, HFA, SLT, ELB

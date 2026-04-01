@@ -5,6 +5,8 @@ use std::path::Path;
 pub struct Config {
     pub homeassistant: Option<HomeAssistantConfig>,
     pub daily_verse: Option<DailyVerseConfig>,
+    /// Automatically advance to the next enabled widget every N seconds.
+    pub widget_cycle_secs: Option<u64>,
 }
 
 #[derive(Debug, Deserialize)]

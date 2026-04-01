@@ -1,5 +1,6 @@
 use chrono::Local;
 use rand::RngExt;
+use std::rc::Rc;
 
 mod config;
 mod dailyverse;
@@ -8,23 +9,59 @@ mod snapcast;
 
 slint::include_modules!();
 
-const WIDGET_COUNT: i32 = 4;
-
 fn main() {
     env_logger::init();
     let config = config::load_config();
+
+    // Build the list of enabled widget indices in display order.
+    // Widgets 1 (NowPlaying) and 2 (Clock) are always available.
+    // Widgets 0 (HomeAssistant) and 3 (DailyVerse) require config.
+    let mut enabled_widgets: Vec<i32> = Vec::new();
+    if config.homeassistant.is_some() {
+        enabled_widgets.push(0);
+    }
+    enabled_widgets.push(1); // NowPlaying (Snapcast always starts)
+    enabled_widgets.push(2); // Clock
+    if config.daily_verse.is_some() {
+        enabled_widgets.push(3);
+    }
 
     let dashboard = Dashboard::new().unwrap();
 
     let now = Local::now();
     dashboard.set_current_time(now.format("%H:%M:%S").to_string().into());
+    dashboard.set_current_widget(enabled_widgets[0]);
 
-    // Widget switching via TAB
+    // Helper: advance to the next enabled widget, wrapping around.
+    let advance_widget = {
+        let enabled_widgets = enabled_widgets.clone();
+        move |dashboard: &Dashboard| {
+            let current = dashboard.get_current_widget();
+            let next_pos = enabled_widgets
+                .iter()
+                .position(|&w| w == current)
+                .map(|pos| (pos + 1) % enabled_widgets.len())
+                .unwrap_or(0);
+            dashboard.set_current_widget(enabled_widgets[next_pos]);
+        }
+    };
+
+    // Auto-cycle timer — created unconditionally so we can share it with the
+    // TAB callback (to restart it on manual switch).
+    let cycle_timer = Rc::new(slint::Timer::default());
+
+    // Widget switching via TAB — also restarts the auto-cycle timer.
     let weak = dashboard.as_weak();
+    let cycle_timer_tab = Rc::clone(&cycle_timer);
+    let advance_widget_tab = advance_widget.clone();
     dashboard.on_next_widget(move || {
         if let Some(d) = weak.upgrade() {
-            let current = d.get_current_widget();
-            d.set_current_widget((current + 1) % WIDGET_COUNT);
+            advance_widget_tab(&d);
+            // Restart the cycle timer so the user gets a full interval after
+            // a manual switch.
+            if cycle_timer_tab.running() {
+                cycle_timer_tab.restart();
+            }
         }
     });
 
@@ -36,7 +73,7 @@ fn main() {
         }
     });
 
-    // Randomize position every 5 seconds
+    // Randomize clock position every 5 seconds
     let weak = dashboard.as_weak();
     let position_timer = slint::Timer::default();
     position_timer.start(
@@ -80,6 +117,23 @@ fn main() {
             dashboard.set_current_time(now.format("%H:%M:%S").to_string().into());
         },
     );
+
+    // Auto-cycle: advance widget every N seconds if configured.
+    if let Some(secs) = config.widget_cycle_secs
+        && enabled_widgets.len() > 1
+    {
+        let weak = dashboard.as_weak();
+        cycle_timer.start(
+            slint::TimerMode::Repeated,
+            std::time::Duration::from_secs(secs),
+            move || {
+                let Some(d) = weak.upgrade() else {
+                    return;
+                };
+                advance_widget(&d);
+            },
+        );
+    }
 
     // Snapcast client in background thread (SnapcastConnection is not Send)
     let snapcast_addr: std::net::SocketAddr = std::env::var("SNAPCAST_HOST")

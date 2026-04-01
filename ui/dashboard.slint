@@ -68,6 +68,7 @@ export component Dashboard inherits Window {
     }
 
     if root.current-widget == 3: DailyVerseWidget {
+        current-time: root.current-time;
         verse-text: root.verse-text;
         verse-reference: root.verse-reference;
         verse-version: root.verse-version;

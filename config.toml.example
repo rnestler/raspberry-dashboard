@@ -1,3 +1,10 @@
+# Daily verse widget: fetches a verse of the day from BibleGateway once per day.
+# TAB to widget index 3. The widget is only active when this section is present.
+[daily_verse]
+# BibleGateway translation ID. Defaults to NGU-DE (Neue Genfer Übersetzung).
+# Other German options: LUTH1912, HFA, SLT, ELB
+# version = "NGU-DE"
+
 [homeassistant]
 url = "http://homeassistant.local:8123"
 token = "your-long-lived-access-token"

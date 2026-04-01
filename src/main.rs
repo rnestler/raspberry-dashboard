@@ -2,12 +2,13 @@ use chrono::Local;
 use rand::RngExt;
 
 mod config;
+mod dailyverse;
 mod homeassistant;
 mod snapcast;
 
 slint::include_modules!();
 
-const WIDGET_COUNT: i32 = 3;
+const WIDGET_COUNT: i32 = 4;
 
 fn main() {
     env_logger::init();
@@ -95,6 +96,15 @@ fn main() {
             }
         });
     });
+
+    // Daily verse polling in a separate background thread
+    if let Some(dv_config) = config.daily_verse {
+        let ui_handle = dashboard.as_weak();
+        std::thread::spawn(move || {
+            let rt = tokio::runtime::Runtime::new().unwrap();
+            rt.block_on(dailyverse::run_daily_verse_client(dv_config, ui_handle));
+        });
+    }
 
     // HomeAssistant polling in a separate background thread
     if let Some(ha_config) = config.homeassistant {

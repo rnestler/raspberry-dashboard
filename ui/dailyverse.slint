@@ -1,0 +1,36 @@
+export component DailyVerseWidget inherits Rectangle {
+    in property <string> verse-text: "";
+    in property <string> verse-reference: "";
+    in property <string> verse-version: "";
+
+    background: black;
+
+    VerticalLayout {
+        alignment: center;
+        padding: 60px;
+        spacing: 24px;
+
+        Text {
+            text: root.verse-text != "" ? root.verse-text : "Tagesvers wird geladen…";
+            color: white;
+            font-size: 32px;
+            wrap: word-wrap;
+            horizontal-alignment: center;
+        }
+
+        Text {
+            text: root.verse-reference;
+            color: #aaaaaa;
+            font-size: 24px;
+            font-weight: 700;
+            horizontal-alignment: center;
+        }
+
+        Text {
+            text: root.verse-version;
+            color: #666666;
+            font-size: 18px;
+            horizontal-alignment: center;
+        }
+    }
+}

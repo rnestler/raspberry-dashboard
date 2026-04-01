@@ -1,6 +1,7 @@
 import { ClockWidget } from "clock.slint";
 import { NowPlayingWidget } from "nowplaying.slint";
 import { HomeAssistantWidget, SensorData } from "homeassistant.slint";
+import { DailyVerseWidget } from "dailyverse.slint";
 export { SensorData }
 
 export component Dashboard inherits Window {
@@ -20,6 +21,11 @@ export component Dashboard inherits Window {
 
     // HomeAssistant widget properties
     in property <[SensorData]> sensors;
+
+    // Daily verse widget properties
+    in property <string> verse-text: "";
+    in property <string> verse-reference: "";
+    in property <string> verse-version: "";
 
     callback next-widget();
     callback quit();
@@ -59,5 +65,11 @@ export component Dashboard inherits Window {
         current-time: root.current-time;
         time-x: root.time-x;
         time-y: root.time-y;
+    }
+
+    if root.current-widget == 3: DailyVerseWidget {
+        verse-text: root.verse-text;
+        verse-reference: root.verse-reference;
+        verse-version: root.verse-version;
     }
 }

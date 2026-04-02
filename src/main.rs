@@ -15,7 +15,7 @@ fn main() {
 
     // Build the list of enabled widget indices in display order.
     // Widgets 1 (NowPlaying) and 2 (Clock) are always available.
-    // Widgets 0 (HomeAssistant) and 3 (DailyVerse) require config.
+    // Widgets 0 (HomeAssistant), 3 (DailyVerse), and 4 (Quotes) require config.
     let mut enabled_widgets: Vec<i32> = Vec::new();
     if config.homeassistant.is_some() {
         enabled_widgets.push(0);
@@ -25,6 +25,13 @@ fn main() {
     if config.daily_verse.is_some() {
         enabled_widgets.push(3);
     }
+    if config.quotes.is_some() {
+        enabled_widgets.push(4);
+    }
+
+    // Collect quotes into an Rc so the advance_widget closure can pick randomly.
+    let quotes_items: Rc<Vec<config::QuoteItem>> =
+        Rc::new(config.quotes.map(|q| q.items).unwrap_or_default());
 
     let dashboard = Dashboard::new().unwrap();
 
@@ -32,9 +39,19 @@ fn main() {
     dashboard.set_current_time(now.format("%H:%M:%S").to_string().into());
     dashboard.set_current_widget(enabled_widgets[0]);
 
+    // Pre-load a random quote so the widget has content on first display.
+    if !quotes_items.is_empty() {
+        let idx = rand::rng().random_range(0..quotes_items.len());
+        let item = &quotes_items[idx];
+        dashboard.set_quote_text(item.text.clone().into());
+        dashboard.set_quote_source(item.source.clone().unwrap_or_default().into());
+    }
+
     // Helper: advance to the next enabled widget, wrapping around.
+    // When the quotes widget (4) becomes active, a new random quote is chosen.
     let advance_widget = {
         let enabled_widgets = enabled_widgets.clone();
+        let quotes_items = Rc::clone(&quotes_items);
         move |dashboard: &Dashboard| {
             let current = dashboard.get_current_widget();
             let next_pos = enabled_widgets
@@ -42,7 +59,14 @@ fn main() {
                 .position(|&w| w == current)
                 .map(|pos| (pos + 1) % enabled_widgets.len())
                 .unwrap_or(0);
-            dashboard.set_current_widget(enabled_widgets[next_pos]);
+            let next_widget = enabled_widgets[next_pos];
+            dashboard.set_current_widget(next_widget);
+            if next_widget == 4 && !quotes_items.is_empty() {
+                let idx = rand::rng().random_range(0..quotes_items.len());
+                let item = &quotes_items[idx];
+                dashboard.set_quote_text(item.text.clone().into());
+                dashboard.set_quote_source(item.source.clone().unwrap_or_default().into());
+            }
         }
     };
 

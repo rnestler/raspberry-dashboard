@@ -5,8 +5,20 @@ use std::path::Path;
 pub struct Config {
     pub homeassistant: Option<HomeAssistantConfig>,
     pub daily_verse: Option<DailyVerseConfig>,
+    pub quotes: Option<QuotesConfig>,
     /// Automatically advance to the next enabled widget every N seconds.
     pub widget_cycle_secs: Option<u64>,
+}
+
+#[derive(Debug, Deserialize)]
+pub struct QuotesConfig {
+    pub items: Vec<QuoteItem>,
+}
+
+#[derive(Debug, Clone, Deserialize)]
+pub struct QuoteItem {
+    pub text: String,
+    pub source: Option<String>,
 }
 
 #[derive(Debug, Deserialize)]

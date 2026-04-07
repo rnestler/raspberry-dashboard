@@ -9,6 +9,21 @@
 # Other German options: LUTH1912, HFA, SLT, ELB
 # version = "NGU-DE"
 
+# Quotes widget: displays a random quote each time the widget is shown.
+# Only active (and included in the cycle) when this section is present.
+# Add as many [[quotes.items]] entries as you like.
+[[quotes.items]]
+text = "The only way to do great work is to love what you do."
+source = "Steve Jobs"
+
+[[quotes.items]]
+text = "Be the change you wish to see in the world."
+source = "Mahatma Gandhi"
+
+[[quotes.items]]
+text = "In the middle of every difficulty lies opportunity."
+# source is optional — omit it to show just the quote text
+
 [homeassistant]
 url = "http://homeassistant.local:8123"
 token = "your-long-lived-access-token"

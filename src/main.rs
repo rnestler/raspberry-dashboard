@@ -5,6 +5,7 @@ use std::rc::Rc;
 mod config;
 mod dailyverse;
 mod homeassistant;
+mod quotes;
 mod snapcast;
 
 slint::include_modules!();
@@ -26,7 +27,7 @@ fn main() {
         enabled_widgets.push(3);
     }
     if config.quotes.is_some() {
-        enabled_widgets.push(4);
+        enabled_widgets.push(quotes::WIDGET_INDEX);
     }
 
     // Collect quotes into an Rc so the advance_widget closure can pick randomly.
@@ -40,12 +41,7 @@ fn main() {
     dashboard.set_current_widget(enabled_widgets[0]);
 
     // Pre-load a random quote so the widget has content on first display.
-    if !quotes_items.is_empty() {
-        let idx = rand::rng().random_range(0..quotes_items.len());
-        let item = &quotes_items[idx];
-        dashboard.set_quote_text(item.text.clone().into());
-        dashboard.set_quote_source(item.source.clone().unwrap_or_default().into());
-    }
+    quotes::set_random_quote(&quotes_items, &dashboard);
 
     // Helper: advance to the next enabled widget, wrapping around.
     // When the quotes widget (4) becomes active, a new random quote is chosen.
@@ -61,11 +57,8 @@ fn main() {
                 .unwrap_or(0);
             let next_widget = enabled_widgets[next_pos];
             dashboard.set_current_widget(next_widget);
-            if next_widget == 4 && !quotes_items.is_empty() {
-                let idx = rand::rng().random_range(0..quotes_items.len());
-                let item = &quotes_items[idx];
-                dashboard.set_quote_text(item.text.clone().into());
-                dashboard.set_quote_source(item.source.clone().unwrap_or_default().into());
+            if next_widget == quotes::WIDGET_INDEX {
+                quotes::set_random_quote(&quotes_items, dashboard);
             }
         }
     };

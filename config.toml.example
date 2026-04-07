@@ -2,6 +2,12 @@
 # TAB also advances the widget and resets this timer.
 # widget_cycle_secs = 30
 
+# Snapcast now-playing widget: connects to a Snapcast server and auto-switches
+# to the now-playing widget when a stream is playing.
+# Only active (and included in the cycle) when this section is present.
+[snapcast]
+host = "127.0.0.1:1705"
+
 # Daily verse widget: fetches a verse of the day from BibleGateway once per day.
 # Only active (and included in the cycle) when this section is present.
 [daily_verse]

@@ -1,13 +1,20 @@
 use serde::Deserialize;
+use std::net::SocketAddr;
 use std::path::Path;
 
 #[derive(Debug, Default, Deserialize)]
 pub struct Config {
+    pub snapcast: Option<SnapcastConfig>,
     pub homeassistant: Option<HomeAssistantConfig>,
     pub daily_verse: Option<DailyVerseConfig>,
     pub quotes: Option<QuotesConfig>,
     /// Automatically advance to the next enabled widget every N seconds.
     pub widget_cycle_secs: Option<u64>,
+}
+
+#[derive(Debug, Deserialize)]
+pub struct SnapcastConfig {
+    pub host: SocketAddr,
 }
 
 #[derive(Debug, Deserialize)]

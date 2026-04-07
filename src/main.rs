@@ -21,7 +21,9 @@ fn main() {
     if config.homeassistant.is_some() {
         enabled_widgets.push(0);
     }
-    enabled_widgets.push(1); // NowPlaying (Snapcast always starts)
+    if config.snapcast.is_some() {
+        enabled_widgets.push(1); // NowPlaying (Snapcast)
+    }
     enabled_widgets.push(2); // Clock
     if config.daily_verse.is_some() {
         enabled_widgets.push(3);
@@ -153,22 +155,24 @@ fn main() {
     }
 
     // Snapcast client in background thread (SnapcastConnection is not Send)
-    let snapcast_addr: std::net::SocketAddr = std::env::var("SNAPCAST_HOST")
-        .unwrap_or_else(|_| "127.0.0.1:1705".to_string())
-        .parse()
-        .expect("invalid SNAPCAST_HOST address");
-    let ui_handle = dashboard.as_weak();
-    let fallback_widget = enabled_widgets[0];
-    std::thread::spawn(move || {
-        let rt = tokio::runtime::Runtime::new().unwrap();
-        rt.block_on(async {
-            loop {
-                snapcast::run_snapcast_client(snapcast_addr, ui_handle.clone(), fallback_widget)
+    if let Some(sc_config) = config.snapcast {
+        let ui_handle = dashboard.as_weak();
+        let fallback_widget = enabled_widgets[0];
+        std::thread::spawn(move || {
+            let rt = tokio::runtime::Runtime::new().unwrap();
+            rt.block_on(async {
+                loop {
+                    snapcast::run_snapcast_client(
+                        sc_config.host,
+                        ui_handle.clone(),
+                        fallback_widget,
+                    )
                     .await;
-                tokio::time::sleep(std::time::Duration::from_secs(5)).await;
-            }
+                    tokio::time::sleep(std::time::Duration::from_secs(5)).await;
+                }
+            });
         });
-    });
+    }
 
     // Daily verse polling in a separate background thread
     if let Some(dv_config) = config.daily_verse {

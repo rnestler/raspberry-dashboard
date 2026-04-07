@@ -7,8 +7,9 @@ Widgets:
 - Snapcast now-playing (auto-switches when a stream is playing)
 - Home Assistant sensors (displays sensor readings with plain cards and gauges)
 - Daily Verse (Bible verse of the day from BibleGateway, fetched once per day)
+- Quotes (random user-configured quotes, picked fresh each time the widget is shown)
 
-TAB cycles through enabled widgets, q quits. Widgets that require configuration (Home Assistant, Daily Verse) are excluded from the cycle when not configured. An optional auto-cycle timer advances to the next widget every N seconds.
+TAB cycles through enabled widgets, q quits. Widgets that require configuration (Home Assistant, Daily Verse, Quotes) are excluded from the cycle when not configured. An optional auto-cycle timer advances to the next widget every N seconds.
 
 ## Build
 
@@ -37,6 +38,7 @@ Key sections:
 - `widget_cycle_secs` — auto-cycle interval in seconds (optional; TAB resets the timer)
 - `[homeassistant]` — Home Assistant URL, token, poll interval, and sensor list (supports plain cards and gauges)
 - `[daily_verse]` — enables the Daily Verse widget; optionally set `version` for a BibleGateway translation (default: `NGU-DE`)
+- `[[quotes.items]]` — list of quotes for the Quotes widget; each entry has a `text` and an optional `source`
 
 ## Deployment
 

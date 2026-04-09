@@ -28,7 +28,7 @@ impl Widget for ClockWidget {
         WIDGET_INDEX
     }
 
-    fn init(&mut self, dashboard: &crate::Dashboard, _fallback_widget: i32) {
+    fn init(&mut self, dashboard: &crate::Dashboard) {
         let weak = dashboard.as_weak();
         let timer = slint::Timer::default();
         timer.start(

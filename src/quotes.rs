@@ -27,7 +27,7 @@ impl Widget for QuotesWidget {
         WIDGET_INDEX
     }
 
-    fn init(&mut self, dashboard: &crate::Dashboard, _fallback_widget: i32) {
+    fn init(&mut self, dashboard: &crate::Dashboard) {
         set_random_quote(&self.items, dashboard);
     }
 

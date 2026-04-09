@@ -27,7 +27,7 @@ impl Widget for HomeAssistantWidget {
         WIDGET_INDEX
     }
 
-    fn init(&mut self, dashboard: &crate::Dashboard, _fallback_widget: i32) {
+    fn init(&mut self, dashboard: &crate::Dashboard) {
         let ui_handle = dashboard.as_weak();
         let config = self
             .config

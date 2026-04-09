@@ -1,12 +1,12 @@
 use std::net::SocketAddr;
+use std::sync::Arc;
+use std::sync::atomic::{AtomicBool, Ordering};
 
+use slint::ComponentHandle;
 use snapcast_control::{
     SnapcastConnection, State,
     stream::{Stream, StreamStatus},
 };
-use std::sync::Arc;
-
-use slint::ComponentHandle;
 
 use crate::config::SnapcastConfig;
 use crate::widget::Widget;
@@ -15,17 +15,22 @@ const WIDGET_INDEX: i32 = 1;
 
 /// Snapcast now-playing widget.
 ///
-/// Spawns a background thread that connects to a Snapcast server and
-/// auto-switches the dashboard to this widget when a stream is playing.
-/// This is a special case: the background thread directly manipulates
-/// `current_widget` via `Weak<Dashboard>`.
+/// Spawns a background thread that connects to a Snapcast server.
+/// When a stream is playing the widget marks itself *active* and switches
+/// the dashboard to itself.  When playback stops it marks itself *inactive*
+/// and invokes the `deactivate-widget` Slint callback so the dashboard can
+/// switch to the next active widget.
 pub struct SnapcastWidget {
     config: SnapcastConfig,
+    active: Arc<AtomicBool>,
 }
 
 impl SnapcastWidget {
     pub fn new(config: SnapcastConfig) -> Self {
-        Self { config }
+        Self {
+            config,
+            active: Arc::new(AtomicBool::new(false)),
+        }
     }
 }
 
@@ -34,18 +39,23 @@ impl Widget for SnapcastWidget {
         WIDGET_INDEX
     }
 
-    fn init(&mut self, dashboard: &crate::Dashboard, fallback_widget: i32) {
+    fn init(&mut self, dashboard: &crate::Dashboard) {
         let ui_handle = dashboard.as_weak();
         let addr = self.config.host;
+        let active = Arc::clone(&self.active);
         std::thread::spawn(move || {
             let rt = tokio::runtime::Runtime::new().unwrap();
             rt.block_on(async {
                 loop {
-                    run_snapcast_client(addr, ui_handle.clone(), fallback_widget).await;
+                    run_snapcast_client(addr, ui_handle.clone(), Arc::clone(&active)).await;
                     tokio::time::sleep(std::time::Duration::from_secs(5)).await;
                 }
             });
         });
+    }
+
+    fn is_active(&self) -> bool {
+        self.active.load(Ordering::Relaxed)
     }
 }
 
@@ -86,11 +96,17 @@ async fn fetch_art_bytes(url: &str) -> Option<Vec<u8>> {
     Some(bytes.to_vec())
 }
 
+/// Update UI properties and toggle the active flag.
+///
+/// When `info` is `Some` (stream playing): set track metadata, mark active,
+/// switch dashboard to this widget.
+/// When `info` is `None` (no stream): mark inactive, invoke
+/// `deactivate-widget` so the dashboard can switch away.
 async fn push_to_ui(
     ui_handle: &slint::Weak<crate::Dashboard>,
     info: Option<&NowPlayingInfo>,
     status: &str,
-    fallback_widget: i32,
+    active: &Arc<AtomicBool>,
 ) {
     let handle = ui_handle.clone();
     let info = info.cloned();
@@ -99,6 +115,8 @@ async fn push_to_ui(
         Some(url) => fetch_art_bytes(url).await,
         None => None,
     };
+    let is_playing = info.is_some();
+    active.store(is_playing, Ordering::Relaxed);
     let _ = slint::invoke_from_event_loop(move || {
         if let Some(dashboard) = handle.upgrade() {
             if let Some(info) = info {
@@ -115,9 +133,9 @@ async fn push_to_ui(
                     .and_then(|b| slint::Image::load_from_svg_data(b).ok())
                     .unwrap_or_default();
                 dashboard.set_art_image(art_image);
-                dashboard.set_current_widget(1);
+                dashboard.set_current_widget(WIDGET_INDEX);
             } else {
-                dashboard.set_current_widget(fallback_widget);
+                dashboard.invoke_deactivate_widget();
             }
             dashboard.set_connection_status(status.into());
         }
@@ -134,10 +152,10 @@ fn set_connection_status(ui_handle: &slint::Weak<crate::Dashboard>, status: &str
     });
 }
 
-pub async fn run_snapcast_client(
+async fn run_snapcast_client(
     addr: SocketAddr,
     ui_handle: slint::Weak<crate::Dashboard>,
-    fallback_widget: i32,
+    active: Arc<AtomicBool>,
 ) {
     set_connection_status(&ui_handle, "Connecting...");
 
@@ -164,7 +182,7 @@ pub async fn run_snapcast_client(
             }
         }
         let info = extract_now_playing(&client.state);
-        push_to_ui(&ui_handle, info.as_ref(), "connected", fallback_widget).await;
+        push_to_ui(&ui_handle, info.as_ref(), "connected", &active).await;
     }
 
     // Keep receiving notifications and updating state
@@ -175,7 +193,7 @@ pub async fn run_snapcast_client(
             }
         }
         let info = extract_now_playing(&client.state);
-        push_to_ui(&ui_handle, info.as_ref(), "connected", fallback_widget).await;
+        push_to_ui(&ui_handle, info.as_ref(), "connected", &active).await;
     }
 
     set_connection_status(&ui_handle, "Disconnected");

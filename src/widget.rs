@@ -14,15 +14,20 @@ pub trait Widget {
     ///
     /// Use this for initial UI property setup, creating main-thread timers,
     /// and/or spawning background threads.
-    ///
-    /// `fallback_widget` is the index of the first enabled widget — used by
-    /// the Snapcast widget when playback stops.
-    fn init(&mut self, dashboard: &crate::Dashboard, fallback_widget: i32);
+    fn init(&mut self, dashboard: &crate::Dashboard);
 
-    /// Called each time this widget becomes the active (visible) widget.
+    /// Called each time this widget becomes the visible widget.
     ///
     /// Default implementation is a no-op.
     fn on_activate(&self, _dashboard: &crate::Dashboard) {}
+
+    /// Whether this widget is currently active.
+    ///
+    /// Inactive widgets are skipped by the auto-cycle timer but can still
+    /// be reached via manual TAB switching.  Default: always active.
+    fn is_active(&self) -> bool {
+        true
+    }
 }
 
 /// Build the list of enabled widgets from the application config.

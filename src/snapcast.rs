@@ -20,14 +20,12 @@ const WIDGET_INDEX: i32 = 1;
 /// This is a special case: the background thread directly manipulates
 /// `current_widget` via `Weak<Dashboard>`.
 pub struct SnapcastWidget {
-    config: Option<SnapcastConfig>,
+    config: SnapcastConfig,
 }
 
 impl SnapcastWidget {
     pub fn new(config: SnapcastConfig) -> Self {
-        Self {
-            config: Some(config),
-        }
+        Self { config }
     }
 }
 
@@ -38,11 +36,7 @@ impl Widget for SnapcastWidget {
 
     fn init(&mut self, dashboard: &crate::Dashboard, fallback_widget: i32) {
         let ui_handle = dashboard.as_weak();
-        let addr = self
-            .config
-            .take()
-            .expect("SnapcastWidget::init called twice")
-            .host;
+        let addr = self.config.host;
         std::thread::spawn(move || {
             let rt = tokio::runtime::Runtime::new().unwrap();
             rt.block_on(async {

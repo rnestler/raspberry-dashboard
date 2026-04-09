@@ -1,5 +1,44 @@
+use slint::ComponentHandle;
+
 use crate::config::HomeAssistantConfig;
+use crate::widget::Widget;
 use log::{error, info, warn};
+
+const WIDGET_INDEX: i32 = 0;
+
+/// Home Assistant sensor widget.
+///
+/// Spawns a background thread that polls sensor states from a
+/// Home Assistant instance at a configurable interval.
+pub struct HomeAssistantWidget {
+    config: Option<HomeAssistantConfig>,
+}
+
+impl HomeAssistantWidget {
+    pub fn new(config: HomeAssistantConfig) -> Self {
+        Self {
+            config: Some(config),
+        }
+    }
+}
+
+impl Widget for HomeAssistantWidget {
+    fn index(&self) -> i32 {
+        WIDGET_INDEX
+    }
+
+    fn init(&mut self, dashboard: &crate::Dashboard, _fallback_widget: i32) {
+        let ui_handle = dashboard.as_weak();
+        let config = self
+            .config
+            .take()
+            .expect("HomeAssistantWidget::init called twice");
+        std::thread::spawn(move || {
+            let rt = tokio::runtime::Runtime::new().unwrap();
+            rt.block_on(run_homeassistant_client(config, ui_handle));
+        });
+    }
+}
 
 #[derive(Debug, serde::Deserialize)]
 struct StateResponse {
@@ -125,7 +164,7 @@ fn build_gauge_data(
     })
 }
 
-pub async fn run_homeassistant_client(
+async fn run_homeassistant_client(
     config: HomeAssistantConfig,
     ui_handle: slint::Weak<crate::Dashboard>,
 ) {

@@ -32,13 +32,20 @@ The `backend-linuxkms-noseat` feature is used for Pi deployment (renders without
 ### Two-thread model
 
 - **Main thread**: Runs the Slint event loop, owns all UI state. Slint timers handle clock updates (1s), screensaver repositioning (5s), and optional auto-cycle widget switching.
-- **Background threads**: Each async client (Snapcast, Home Assistant, Daily Verse) runs in its own thread with a tokio runtime. They communicate UI updates to the main thread via `slint::invoke_from_event_loop()`. The Quotes widget has no background thread — quotes are loaded from config at startup and a random one is picked on the main thread each time the widget is shown.
+- **Background threads**: Each async client (Snapcast, Home Assistant, Daily Verse) runs in its own thread with a tokio runtime. They communicate UI updates to the main thread via `slint::invoke_from_event_loop()`. The Quotes and Clock widgets have no background threads and run entirely on the main thread.
 
-### Widget system
+### Widget trait and factory (`src/widget.rs`)
 
-`dashboard.slint` is the top-level window that conditionally renders widgets based on an integer `current-widget` property. TAB cycles widgets manually; the Snapcast module auto-switches based on playback state. Unconfigured optional widgets are excluded from the TAB cycle. To add a new widget: add it to the `enabled_widgets` list in `main.rs`, add a new `.slint` component, and add a conditional block in `dashboard.slint`.
+All widgets implement the `Widget` trait (`index`, `init`, `on_activate`). The `create_widgets(config)` factory inspects the config and returns only enabled widgets as `Vec<Box<dyn Widget>>`. `main.rs` operates on widgets generically — no widget-specific code.
+
+To add a new widget: create a module with a struct implementing `Widget`, register it in `create_widgets`, add a new `.slint` component, and add a conditional block in `dashboard.slint`.
+
+- `init(&mut self, &Dashboard, fallback_widget)` — called once at startup for main-thread setup (timers, initial properties) and/or spawning background threads. Widgets that need a background thread call `dashboard.as_weak()` and spawn from here.
+- `on_activate(&self, &Dashboard)` — called each time the widget becomes visible. Used by Quotes to pick a new random quote; no-op for others.
 
 Widget indices: 0 = HomeAssistant (optional), 1 = NowPlaying (Snapcast, optional), 2 = Clock (always), 3 = DailyVerse (optional), 4 = Quotes (optional).
+
+The 1-second `current_time` timer is a dashboard-level concern in `main.rs` (all widgets display the time via the shared Slint property).
 
 ### Snapcast integration (`src/snapcast.rs`)
 

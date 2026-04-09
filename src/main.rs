@@ -1,66 +1,57 @@
 use chrono::Local;
-use rand::RngExt;
 use std::rc::Rc;
 
+mod clock;
 mod config;
 mod dailyverse;
 mod homeassistant;
 mod quotes;
 mod snapcast;
+mod widget;
 
 slint::include_modules!();
 
 fn main() {
     env_logger::init();
     let config = config::load_config();
+    let widget_cycle_secs = config.widget_cycle_secs;
 
-    // Build the list of enabled widget indices in display order.
-    // Widgets 1 (NowPlaying) and 2 (Clock) are always available.
-    // Widgets 0 (HomeAssistant), 3 (DailyVerse), and 4 (Quotes) require config.
-    let mut enabled_widgets: Vec<i32> = Vec::new();
-    if config.homeassistant.is_some() {
-        enabled_widgets.push(0);
-    }
-    if config.snapcast.is_some() {
-        enabled_widgets.push(1); // NowPlaying (Snapcast)
-    }
-    enabled_widgets.push(2); // Clock
-    if config.daily_verse.is_some() {
-        enabled_widgets.push(3);
-    }
-    if config.quotes.is_some() {
-        enabled_widgets.push(quotes::WIDGET_INDEX);
-    }
-
-    // Collect quotes into an Rc so the advance_widget closure can pick randomly.
-    let quotes_items: Rc<Vec<config::QuoteItem>> =
-        Rc::new(config.quotes.map(|q| q.items).unwrap_or_default());
+    // Build the list of enabled widgets from config.
+    let mut widgets = widget::create_widgets(config);
+    let enabled_indices: Vec<i32> = widgets.iter().map(|w| w.index()).collect();
+    let fallback_widget = enabled_indices[0];
 
     let dashboard = Dashboard::new().unwrap();
 
+    // Set initial time and active widget.
     let now = Local::now();
     dashboard.set_current_time(now.format("%H:%M:%S").to_string().into());
-    dashboard.set_current_widget(enabled_widgets[0]);
+    dashboard.set_current_widget(fallback_widget);
 
-    // Pre-load a random quote so the widget has content on first display.
-    quotes::set_random_quote(&quotes_items, &dashboard);
+    // Initialise every widget (main-thread setup + background thread spawning).
+    for w in widgets.iter_mut() {
+        w.init(&dashboard, fallback_widget);
+    }
+
+    // Wrap in Rc for sharing with closures (advance_widget, TAB, cycle timer).
+    let widgets: Rc<Vec<Box<dyn widget::Widget>>> = Rc::new(widgets);
 
     // Helper: advance to the next enabled widget, wrapping around.
-    // When the quotes widget (4) becomes active, a new random quote is chosen.
+    // Calls on_activate for the newly active widget.
     let advance_widget = {
-        let enabled_widgets = enabled_widgets.clone();
-        let quotes_items = Rc::clone(&quotes_items);
+        let enabled_indices = enabled_indices.clone();
+        let widgets = Rc::clone(&widgets);
         move |dashboard: &Dashboard| {
             let current = dashboard.get_current_widget();
-            let next_pos = enabled_widgets
+            let next_pos = enabled_indices
                 .iter()
                 .position(|&w| w == current)
-                .map(|pos| (pos + 1) % enabled_widgets.len())
+                .map(|pos| (pos + 1) % enabled_indices.len())
                 .unwrap_or(0);
-            let next_widget = enabled_widgets[next_pos];
+            let next_widget = enabled_indices[next_pos];
             dashboard.set_current_widget(next_widget);
-            if next_widget == quotes::WIDGET_INDEX {
-                quotes::set_random_quote(&quotes_items, dashboard);
+            if let Some(w) = widgets.iter().find(|w| w.index() == next_widget) {
+                w.on_activate(dashboard);
             }
         }
     };
@@ -92,37 +83,8 @@ fn main() {
         }
     });
 
-    // Randomize clock position every 5 seconds
-    let weak = dashboard.as_weak();
-    let position_timer = slint::Timer::default();
-    position_timer.start(
-        slint::TimerMode::Repeated,
-        std::time::Duration::from_secs(5),
-        move || {
-            let Some(dashboard) = weak.upgrade() else {
-                return;
-            };
-            let size = dashboard.window().size();
-            let scale = dashboard.window().scale_factor();
-            let window_width = size.width as f32 / scale;
-            let window_height = size.height as f32 / scale;
-
-            let text_width: f32 = 450.0;
-            let text_height: f32 = 90.0;
-
-            let max_x = (window_width - text_width).max(0.0);
-            let max_y = (window_height - text_height).max(0.0);
-
-            let mut rng = rand::rng();
-            let x: f32 = rng.random_range(0.0..=max_x);
-            let y: f32 = rng.random_range(0.0..=max_y);
-
-            dashboard.set_time_x(x);
-            dashboard.set_time_y(y);
-        },
-    );
-
-    // Update clock every second
+    // Update clock every second (dashboard-level concern — all widgets show
+    // the time via the shared `current-time` property).
     let weak = dashboard.as_weak();
     let clock_timer = slint::Timer::default();
     clock_timer.start(
@@ -138,8 +100,8 @@ fn main() {
     );
 
     // Auto-cycle: advance widget every N seconds if configured.
-    if let Some(secs) = config.widget_cycle_secs
-        && enabled_widgets.len() > 1
+    if let Some(secs) = widget_cycle_secs
+        && enabled_indices.len() > 1
     {
         let weak = dashboard.as_weak();
         cycle_timer.start(
@@ -152,46 +114,6 @@ fn main() {
                 advance_widget(&d);
             },
         );
-    }
-
-    // Snapcast client in background thread (SnapcastConnection is not Send)
-    if let Some(sc_config) = config.snapcast {
-        let ui_handle = dashboard.as_weak();
-        let fallback_widget = enabled_widgets[0];
-        std::thread::spawn(move || {
-            let rt = tokio::runtime::Runtime::new().unwrap();
-            rt.block_on(async {
-                loop {
-                    snapcast::run_snapcast_client(
-                        sc_config.host,
-                        ui_handle.clone(),
-                        fallback_widget,
-                    )
-                    .await;
-                    tokio::time::sleep(std::time::Duration::from_secs(5)).await;
-                }
-            });
-        });
-    }
-
-    // Daily verse polling in a separate background thread
-    if let Some(dv_config) = config.daily_verse {
-        let ui_handle = dashboard.as_weak();
-        std::thread::spawn(move || {
-            let rt = tokio::runtime::Runtime::new().unwrap();
-            rt.block_on(dailyverse::run_daily_verse_client(dv_config, ui_handle));
-        });
-    }
-
-    // HomeAssistant polling in a separate background thread
-    if let Some(ha_config) = config.homeassistant {
-        let ui_handle = dashboard.as_weak();
-        std::thread::spawn(move || {
-            let rt = tokio::runtime::Runtime::new().unwrap();
-            rt.block_on(homeassistant::run_homeassistant_client(
-                ha_config, ui_handle,
-            ));
-        });
     }
 
     dashboard.run().unwrap();

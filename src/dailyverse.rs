@@ -1,6 +1,10 @@
+use slint::ComponentHandle;
+
 use crate::config::DailyVerseConfig;
+use crate::widget::Widget;
 use log::{error, info, warn};
 
+const WIDGET_INDEX: i32 = 3;
 const BIBLEGATEWAY_VOTD_URL: &str = "https://www.biblegateway.com/votd/get/";
 const DEFAULT_VERSION: &str = "NGU-DE";
 /// Retry interval on fetch failure (1 hour).
@@ -89,7 +93,40 @@ fn push_to_ui(
     });
 }
 
-pub async fn run_daily_verse_client(
+/// Daily verse widget — fetches the BibleGateway verse of the day.
+///
+/// Spawns a background thread that polls once per day (at midnight).
+pub struct DailyVerseWidget {
+    config: Option<DailyVerseConfig>,
+}
+
+impl DailyVerseWidget {
+    pub fn new(config: DailyVerseConfig) -> Self {
+        Self {
+            config: Some(config),
+        }
+    }
+}
+
+impl Widget for DailyVerseWidget {
+    fn index(&self) -> i32 {
+        WIDGET_INDEX
+    }
+
+    fn init(&mut self, dashboard: &crate::Dashboard, _fallback_widget: i32) {
+        let ui_handle = dashboard.as_weak();
+        let config = self
+            .config
+            .take()
+            .expect("DailyVerseWidget::init called twice");
+        std::thread::spawn(move || {
+            let rt = tokio::runtime::Runtime::new().unwrap();
+            rt.block_on(run_daily_verse_client(config, ui_handle));
+        });
+    }
+}
+
+async fn run_daily_verse_client(
     config: DailyVerseConfig,
     ui_handle: slint::Weak<crate::Dashboard>,
 ) {

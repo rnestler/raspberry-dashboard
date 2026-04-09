@@ -6,6 +6,55 @@ use snapcast_control::{
 };
 use std::sync::Arc;
 
+use slint::ComponentHandle;
+
+use crate::config::SnapcastConfig;
+use crate::widget::Widget;
+
+const WIDGET_INDEX: i32 = 1;
+
+/// Snapcast now-playing widget.
+///
+/// Spawns a background thread that connects to a Snapcast server and
+/// auto-switches the dashboard to this widget when a stream is playing.
+/// This is a special case: the background thread directly manipulates
+/// `current_widget` via `Weak<Dashboard>`.
+pub struct SnapcastWidget {
+    config: Option<SnapcastConfig>,
+}
+
+impl SnapcastWidget {
+    pub fn new(config: SnapcastConfig) -> Self {
+        Self {
+            config: Some(config),
+        }
+    }
+}
+
+impl Widget for SnapcastWidget {
+    fn index(&self) -> i32 {
+        WIDGET_INDEX
+    }
+
+    fn init(&mut self, dashboard: &crate::Dashboard, fallback_widget: i32) {
+        let ui_handle = dashboard.as_weak();
+        let addr = self
+            .config
+            .take()
+            .expect("SnapcastWidget::init called twice")
+            .host;
+        std::thread::spawn(move || {
+            let rt = tokio::runtime::Runtime::new().unwrap();
+            rt.block_on(async {
+                loop {
+                    run_snapcast_client(addr, ui_handle.clone(), fallback_widget).await;
+                    tokio::time::sleep(std::time::Duration::from_secs(5)).await;
+                }
+            });
+        });
+    }
+}
+
 #[derive(Debug, Clone, Default, serde::Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct NowPlayingInfo {

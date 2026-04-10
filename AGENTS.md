@@ -36,7 +36,9 @@ The `backend-linuxkms-noseat` feature is used for Pi deployment (renders without
 
 ### Widget trait and factory (`src/widget.rs`)
 
-All widgets implement the `Widget` trait (`index`, `init`, `on_activate`, `is_active`). The `create_widgets(config)` factory inspects the config and returns only enabled widgets as `Vec<Box<dyn Widget>>`. `main.rs` operates on widgets generically — no widget-specific code.
+All widgets implement the `Widget` trait (`index`, `init`, `on_activate`, `is_active`). The `create_widgets(config)` factory inspects the config and returns a `WidgetController` that owns only the enabled widgets. `main.rs` operates on widgets generically via the controller — no widget-specific code.
+
+The `WidgetController` centralises all widget-switching logic: `advance(dashboard, active_only)` cycles widgets (TAB uses `active_only=false`, auto-cycle uses `true`), and `deactivate_current(dashboard)` switches away from an inactive widget. The Slint `deactivate-widget` callback delegates to the controller.
 
 To add a new widget: create a module with a struct implementing `Widget`, register it in `create_widgets`, add a new `.slint` component, and add a conditional block in `dashboard.slint`.
 

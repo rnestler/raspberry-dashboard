@@ -229,7 +229,6 @@ async fn run_weather_client(
             };
 
             if let Some(state) = current {
-                let symbol = condition_symbol(&state.state);
                 let temp = state
                     .attributes
                     .temperature
@@ -247,7 +246,7 @@ async fn run_weather_client(
                     .map(|w| format!("{w:.0} {}", state.attributes.wind_speed_unit))
                     .unwrap_or_default();
 
-                dashboard.set_weather_condition_symbol(symbol.into());
+                dashboard.set_weather_condition_symbol(condition_symbol(&state.state).into());
                 dashboard.set_weather_condition(condition_label(&state.state).into());
                 dashboard.set_weather_temp(format!("{temp}{temp_unit}").into());
                 dashboard.set_weather_humidity(humidity.into());

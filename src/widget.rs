@@ -1,3 +1,5 @@
+use std::cell::Cell;
+
 use crate::config::Config;
 
 /// Common interface for all dashboard widgets.
@@ -33,10 +35,15 @@ pub trait Widget {
 /// Owns the widget list and centralises all widget-switching logic.
 ///
 /// Lives on the main thread as `Rc<WidgetController>`.  The Slint
-/// callbacks (`next-widget`, `deactivate-widget`) and the auto-cycle
-/// timer all delegate to methods on this struct.
+/// callbacks (`next-widget`, `activate-widget`, `deactivate-widget`) and
+/// the auto-cycle timer all delegate to methods on this struct.
+///
+/// The controller is the source of truth for which widget position is
+/// currently displayed.  It tracks position internally via a `Cell<usize>`
+/// so callers never need to look up the current widget from Slint.
 pub struct WidgetController {
     widgets: Vec<Box<dyn Widget>>,
+    current: Cell<usize>,
 }
 
 impl WidgetController {
@@ -48,7 +55,10 @@ impl WidgetController {
     }
 
     /// The ID of the first enabled widget (used as initial display).
+    ///
+    /// Also sets the internal position to 0.
     pub fn first_id(&self) -> i32 {
+        self.current.set(0);
         self.widgets[0].id()
     }
 
@@ -57,48 +67,49 @@ impl WidgetController {
         self.widgets.len()
     }
 
+    /// Switch directly to the widget with the given `id`.
+    ///
+    /// Used by the `activate-widget` Slint callback so that background
+    /// threads (e.g. Snapcast) can request a specific widget.  Updates
+    /// internal position, sets the Slint property, and calls `on_activate`.
+    pub fn switch_to(&self, dashboard: &crate::Dashboard, id: i32) {
+        if let Some(pos) = self.widgets.iter().position(|w| w.id() == id) {
+            self.show(dashboard, pos);
+        }
+    }
+
     /// Advance to the next widget, wrapping around.
     ///
     /// When `active_only` is true, inactive widgets are skipped (used by
     /// the auto-cycle timer and `deactivate_current`).  When false, all
     /// enabled widgets are candidates (used by manual TAB switching).
-    ///
-    /// Calls `on_activate` on the newly visible widget.
     pub fn advance(&self, dashboard: &crate::Dashboard, active_only: bool) {
-        let current = dashboard.get_current_widget();
+        let cur = self.current.get();
         let len = self.widgets.len();
-        let cur_pos = self
-            .widgets
-            .iter()
-            .position(|w| w.id() == current)
-            .unwrap_or(0);
-
         for offset in 1..=len {
-            let pos = (cur_pos + offset) % len;
-            let w = &self.widgets[pos];
-            if !active_only || w.is_active() {
-                dashboard.set_current_widget(w.id());
-                w.on_activate(dashboard);
+            let pos = (cur + offset) % len;
+            if !active_only || self.widgets[pos].is_active() {
+                self.show(dashboard, pos);
                 return;
             }
         }
         // All widgets inactive (unlikely) — stay on current.
     }
 
-    /// A widget has signalled that it became inactive.
-    ///
     /// If the currently displayed widget is inactive, advance to the
     /// next active widget.
     pub fn deactivate_current(&self, dashboard: &crate::Dashboard) {
-        let current = dashboard.get_current_widget();
-        let is_inactive = self
-            .widgets
-            .iter()
-            .find(|w| w.id() == current)
-            .is_some_and(|w| !w.is_active());
-        if is_inactive {
+        if !self.widgets[self.current.get()].is_active() {
             self.advance(dashboard, true);
         }
+    }
+
+    /// Internal helper: switch to the widget at `pos`.
+    fn show(&self, dashboard: &crate::Dashboard, pos: usize) {
+        self.current.set(pos);
+        let w = &self.widgets[pos];
+        dashboard.set_current_widget(w.id());
+        w.on_activate(dashboard);
     }
 }
 
@@ -129,5 +140,8 @@ pub fn create_widgets(config: Config) -> WidgetController {
         widgets.push(Box::new(crate::quotes::QuotesWidget::new(quotes_config)));
     }
 
-    WidgetController { widgets }
+    WidgetController {
+        widgets,
+        current: Cell::new(0),
+    }
 }

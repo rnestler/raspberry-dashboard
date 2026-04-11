@@ -33,6 +33,7 @@ export component Dashboard inherits Window {
     in property <string> quote-source: "";
 
     callback next-widget();
+    callback activate-widget(/* id */ int);
     callback deactivate-widget();
     callback quit();
 

@@ -133,7 +133,7 @@ async fn push_to_ui(
                     .and_then(|b| slint::Image::load_from_svg_data(b).ok())
                     .unwrap_or_default();
                 dashboard.set_art_image(art_image);
-                dashboard.set_current_widget(WIDGET_ID);
+                dashboard.invoke_activate_widget(WIDGET_ID);
             } else {
                 dashboard.invoke_deactivate_widget();
             }

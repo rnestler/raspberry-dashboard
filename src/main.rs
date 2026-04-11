@@ -62,6 +62,15 @@ fn main() {
         }
     });
 
+    // A background thread wants to switch to a specific widget by ID.
+    let weak = dashboard.as_weak();
+    let ctrl = Rc::clone(&controller);
+    dashboard.on_activate_widget(move |id| {
+        if let Some(d) = weak.upgrade() {
+            ctrl.switch_to(&d, id);
+        }
+    });
+
     // Quit via "q"
     let weak = dashboard.as_weak();
     dashboard.on_quit(move || {

@@ -24,7 +24,7 @@ fn main() {
     // Set initial time and active widget.
     let now = Local::now();
     dashboard.set_current_time(now.format("%H:%M:%S").to_string().into());
-    dashboard.set_current_widget(controller.first_index());
+    dashboard.set_current_widget(controller.first_id());
 
     // Initialise every widget (main-thread setup + background thread spawning).
     controller.init_all(&dashboard);

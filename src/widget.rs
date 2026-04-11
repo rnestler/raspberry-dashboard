@@ -7,8 +7,8 @@ use crate::config::Config;
 /// returns only the widgets whose configuration section is present
 /// (the Clock widget is always included).
 pub trait Widget {
-    /// Slint `current-widget` index for this widget.
-    fn index(&self) -> i32;
+    /// Slint `current-widget` ID for this widget.
+    fn id(&self) -> i32;
 
     /// Called once at startup on the **main thread**.
     ///
@@ -47,9 +47,9 @@ impl WidgetController {
         }
     }
 
-    /// The index of the first enabled widget (used as initial display).
-    pub fn first_index(&self) -> i32 {
-        self.widgets[0].index()
+    /// The ID of the first enabled widget (used as initial display).
+    pub fn first_id(&self) -> i32 {
+        self.widgets[0].id()
     }
 
     /// Number of enabled widgets.
@@ -70,14 +70,14 @@ impl WidgetController {
         let cur_pos = self
             .widgets
             .iter()
-            .position(|w| w.index() == current)
+            .position(|w| w.id() == current)
             .unwrap_or(0);
 
         for offset in 1..=len {
             let pos = (cur_pos + offset) % len;
             let w = &self.widgets[pos];
             if !active_only || w.is_active() {
-                dashboard.set_current_widget(w.index());
+                dashboard.set_current_widget(w.id());
                 w.on_activate(dashboard);
                 return;
             }
@@ -94,7 +94,7 @@ impl WidgetController {
         let is_inactive = self
             .widgets
             .iter()
-            .find(|w| w.index() == current)
+            .find(|w| w.id() == current)
             .is_some_and(|w| !w.is_active());
         if is_inactive {
             self.advance(dashboard, true);

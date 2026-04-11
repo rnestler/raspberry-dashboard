@@ -4,7 +4,7 @@ use crate::config::HomeAssistantConfig;
 use crate::widget::Widget;
 use log::{error, info, warn};
 
-const WIDGET_INDEX: i32 = 0;
+const WIDGET_ID: i32 = 0;
 
 /// Home Assistant sensor widget.
 ///
@@ -23,8 +23,8 @@ impl HomeAssistantWidget {
 }
 
 impl Widget for HomeAssistantWidget {
-    fn index(&self) -> i32 {
-        WIDGET_INDEX
+    fn id(&self) -> i32 {
+        WIDGET_ID
     }
 
     fn init(&mut self, dashboard: &crate::Dashboard) {

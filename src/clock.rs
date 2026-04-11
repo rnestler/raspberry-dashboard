@@ -3,7 +3,7 @@ use slint::ComponentHandle;
 
 use crate::widget::Widget;
 
-const WIDGET_INDEX: i32 = 2;
+const WIDGET_ID: i32 = 2;
 
 /// The always-enabled clock widget.
 ///
@@ -24,8 +24,8 @@ impl ClockWidget {
 }
 
 impl Widget for ClockWidget {
-    fn index(&self) -> i32 {
-        WIDGET_INDEX
+    fn id(&self) -> i32 {
+        WIDGET_ID
     }
 
     fn init(&mut self, dashboard: &crate::Dashboard) {

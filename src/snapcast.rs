@@ -11,7 +11,7 @@ use snapcast_control::{
 use crate::config::SnapcastConfig;
 use crate::widget::Widget;
 
-const WIDGET_INDEX: i32 = 1;
+const WIDGET_ID: i32 = 1;
 
 /// Snapcast now-playing widget.
 ///
@@ -35,8 +35,8 @@ impl SnapcastWidget {
 }
 
 impl Widget for SnapcastWidget {
-    fn index(&self) -> i32 {
-        WIDGET_INDEX
+    fn id(&self) -> i32 {
+        WIDGET_ID
     }
 
     fn init(&mut self, dashboard: &crate::Dashboard) {
@@ -133,7 +133,7 @@ async fn push_to_ui(
                     .and_then(|b| slint::Image::load_from_svg_data(b).ok())
                     .unwrap_or_default();
                 dashboard.set_art_image(art_image);
-                dashboard.set_current_widget(WIDGET_INDEX);
+                dashboard.set_current_widget(WIDGET_ID);
             } else {
                 dashboard.invoke_deactivate_widget();
             }

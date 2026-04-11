@@ -174,18 +174,6 @@ async fn run_snapcast_client(
         return;
     }
 
-    // Receive the initial status response and update UI
-    if let Some(messages) = client.recv().await {
-        for msg in &messages {
-            if let Err(e) = msg {
-                log::error!("Snapcast message error: {e}");
-            }
-        }
-        let info = extract_now_playing(&client.state);
-        push_to_ui(&ui_handle, info.as_ref(), "connected", &active).await;
-    }
-
-    // Keep receiving notifications and updating state
     while let Some(messages) = client.recv().await {
         for msg in &messages {
             if let Err(e) = msg {

@@ -37,7 +37,6 @@ pub struct DailyVerseConfig {
 #[derive(Debug, Deserialize)]
 pub struct HomeAssistantConfig {
     pub url: String,
-    pub token: String,
     pub poll_interval_secs: Option<u64>,
     pub sensors: Vec<SensorConfig>,
 }
@@ -55,6 +54,12 @@ pub struct SensorConfig {
     /// Gauge: exactly three ascending threshold values that define the
     /// boundaries between the blue/green, green/orange, and orange/red zones.
     pub thresholds: Option<Vec<f32>>,
+}
+
+/// Read the Home Assistant long-lived access token from the
+/// `HOMEASSISTANT_TOKEN` environment variable.
+pub fn homeassistant_token() -> Option<String> {
+    std::env::var("HOMEASSISTANT_TOKEN").ok()
 }
 
 pub fn load_config() -> Config {

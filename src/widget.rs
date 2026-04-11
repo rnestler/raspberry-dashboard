@@ -116,11 +116,18 @@ impl WidgetController {
 /// their config section is present.
 pub fn create_widgets(config: Config) -> WidgetController {
     let mut widgets: Vec<Box<dyn Widget>> = Vec::new();
+    let ha_token = crate::config::homeassistant_token();
 
     if let Some(ha_config) = config.homeassistant {
-        widgets.push(Box::new(crate::homeassistant::HomeAssistantWidget::new(
-            ha_config,
-        )));
+        if let Some(token) = ha_token.clone() {
+            widgets.push(Box::new(crate::homeassistant::HomeAssistantWidget::new(
+                ha_config, token,
+            )));
+        } else {
+            log::warn!(
+                "HomeAssistant config present but HOMEASSISTANT_TOKEN not set – skipping widget"
+            );
+        }
     }
     if let Some(sc_config) = config.snapcast {
         widgets.push(Box::new(crate::snapcast::SnapcastWidget::new(sc_config)));

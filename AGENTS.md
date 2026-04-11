@@ -36,12 +36,15 @@ The `backend-linuxkms-noseat` feature is used for Pi deployment (renders without
 
 ### Widget trait and factory (`src/widget.rs`)
 
-All widgets implement the `Widget` trait (`index`, `init`, `on_activate`). The `create_widgets(config)` factory inspects the config and returns only enabled widgets as `Vec<Box<dyn Widget>>`. `main.rs` operates on widgets generically — no widget-specific code.
+All widgets implement the `Widget` trait (`index`, `init`, `on_activate`, `is_active`). The `create_widgets(config)` factory inspects the config and returns a `WidgetController` that owns only the enabled widgets. `main.rs` operates on widgets generically via the controller — no widget-specific code.
+
+The `WidgetController` centralises all widget-switching logic: `advance(dashboard, active_only)` cycles widgets (TAB uses `active_only=false`, auto-cycle uses `true`), and `deactivate_current(dashboard)` switches away from an inactive widget. The Slint `deactivate-widget` callback delegates to the controller.
 
 To add a new widget: create a module with a struct implementing `Widget`, register it in `create_widgets`, add a new `.slint` component, and add a conditional block in `dashboard.slint`.
 
-- `init(&mut self, &Dashboard, fallback_widget)` — called once at startup for main-thread setup (timers, initial properties) and/or spawning background threads. Widgets that need a background thread call `dashboard.as_weak()` and spawn from here.
+- `init(&mut self, &Dashboard)` — called once at startup for main-thread setup (timers, initial properties) and/or spawning background threads. Widgets that need a background thread call `dashboard.as_weak()` and spawn from here.
 - `on_activate(&self, &Dashboard)` — called each time the widget becomes visible. Used by Quotes to pick a new random quote; no-op for others.
+- `is_active(&self) -> bool` — whether the widget should be included in auto-cycle rotation. Default: `true`. Snapcast returns `false` when nothing is playing, causing the auto-cycle timer to skip it. Manual TAB switching still reaches inactive widgets.
 
 Widget indices: 0 = HomeAssistant (optional), 1 = NowPlaying (Snapcast, optional), 2 = Clock (always), 3 = DailyVerse (optional), 4 = Quotes (optional).
 
@@ -49,7 +52,7 @@ The 1-second `current_time` timer is a dashboard-level concern in `main.rs` (all
 
 ### Snapcast integration (`src/snapcast.rs`)
 
-Uses the `snapcast-control` crate (async/tokio) to connect to a Snapcast server via TCP. Key detail: `StreamMetadata` fields are private in the crate, so metadata is extracted via serialize-to-`serde_json::Value`-then-deserialize into a local `NowPlayingInfo` struct. Album art (SVG) is fetched via HTTP from `art_url` and decoded by Slint's built-in SVG support (`Image::load_from_svg_data`). When playback stops, the fallback widget is configurable (defaults to the first enabled widget rather than a hardcoded index).
+Uses the `snapcast-control` crate (async/tokio) to connect to a Snapcast server via TCP. Key detail: `StreamMetadata` fields are private in the crate, so metadata is extracted via serialize-to-`serde_json::Value`-then-deserialize into a local `NowPlayingInfo` struct. Album art (SVG) is fetched via HTTP from `art_url` and decoded by Slint's built-in SVG support (`Image::load_from_svg_data`). When playback starts, Snapcast marks itself active and auto-switches the dashboard to its widget. When playback stops, it marks itself inactive and invokes the `deactivate-widget` Slint callback; `main.rs` then advances to the next active widget.
 
 ### Slint ↔ Rust boundary
 

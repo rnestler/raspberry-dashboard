@@ -4,7 +4,7 @@ use crate::config::HomeAssistantConfig;
 use crate::widget::Widget;
 use log::{error, info, warn};
 
-const WIDGET_INDEX: i32 = 0;
+const WIDGET_ID: i32 = 0;
 
 /// Home Assistant sensor widget.
 ///
@@ -23,11 +23,11 @@ impl HomeAssistantWidget {
 }
 
 impl Widget for HomeAssistantWidget {
-    fn index(&self) -> i32 {
-        WIDGET_INDEX
+    fn id(&self) -> i32 {
+        WIDGET_ID
     }
 
-    fn init(&mut self, dashboard: &crate::Dashboard, _fallback_widget: i32) {
+    fn init(&mut self, dashboard: &crate::Dashboard) {
         let ui_handle = dashboard.as_weak();
         let config = self
             .config
@@ -164,6 +164,21 @@ fn build_gauge_data(
     })
 }
 
+fn plain_card(label: &str, value: &str, unit: &str) -> crate::SensorData {
+    crate::SensorData {
+        label: label.into(),
+        value: value.into(),
+        unit: unit.into(),
+        is_gauge: false,
+        min_value: 0.0,
+        max_value: 0.0,
+        current_value: 0.0,
+        threshold1: 0.0,
+        threshold2: 0.0,
+        threshold3: 0.0,
+    }
+}
+
 async fn run_homeassistant_client(
     config: HomeAssistantConfig,
     ui_handle: slint::Weak<crate::Dashboard>,
@@ -175,49 +190,24 @@ async fn run_homeassistant_client(
     );
     let client = reqwest::Client::new();
     let poll_interval = std::time::Duration::from_secs(config.poll_interval_secs.unwrap_or(30));
-    let labels: Vec<String> = config.sensors.iter().map(|s| s.label.clone()).collect();
 
     loop {
         let mut readings: Vec<crate::SensorData> = Vec::new();
 
-        for (i, sensor) in config.sensors.iter().enumerate() {
+        for sensor in &config.sensors {
             let (value, unit) =
                 fetch_sensor(&client, &config.url, &config.token, &sensor.entity_id)
                     .await
                     .unwrap_or_else(|| ("unavailable".into(), String::new()));
 
-            let label = &labels[i];
+            let label = &sensor.label;
             let is_gauge = sensor.sensor_type.as_deref() == Some("gauge");
 
             let data = if is_gauge {
-                build_gauge_data(sensor, label, &value, &unit).unwrap_or_else(|| {
-                    // Fall back to a plain card if gauge config is invalid.
-                    crate::SensorData {
-                        label: label.as_str().into(),
-                        value: value.as_str().into(),
-                        unit: unit.as_str().into(),
-                        is_gauge: false,
-                        min_value: 0.0,
-                        max_value: 0.0,
-                        current_value: 0.0,
-                        threshold1: 0.0,
-                        threshold2: 0.0,
-                        threshold3: 0.0,
-                    }
-                })
+                build_gauge_data(sensor, label, &value, &unit)
+                    .unwrap_or_else(|| plain_card(label, &value, &unit))
             } else {
-                crate::SensorData {
-                    label: label.as_str().into(),
-                    value: value.as_str().into(),
-                    unit: unit.as_str().into(),
-                    is_gauge: false,
-                    min_value: 0.0,
-                    max_value: 0.0,
-                    current_value: 0.0,
-                    threshold1: 0.0,
-                    threshold2: 0.0,
-                    threshold3: 0.0,
-                }
+                plain_card(label, &value, &unit)
             };
             readings.push(data);
         }

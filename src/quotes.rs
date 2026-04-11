@@ -3,7 +3,7 @@ use rand::RngExt;
 use crate::config::{QuoteItem, QuotesConfig};
 use crate::widget::Widget;
 
-const WIDGET_INDEX: i32 = 4;
+const WIDGET_ID: i32 = 4;
 
 /// Quotes widget — displays a random user-configured quote.
 ///
@@ -23,11 +23,11 @@ impl QuotesWidget {
 }
 
 impl Widget for QuotesWidget {
-    fn index(&self) -> i32 {
-        WIDGET_INDEX
+    fn id(&self) -> i32 {
+        WIDGET_ID
     }
 
-    fn init(&mut self, dashboard: &crate::Dashboard, _fallback_widget: i32) {
+    fn init(&mut self, dashboard: &crate::Dashboard) {
         set_random_quote(&self.items, dashboard);
     }
 

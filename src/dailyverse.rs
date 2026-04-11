@@ -4,7 +4,7 @@ use crate::config::DailyVerseConfig;
 use crate::widget::Widget;
 use log::{error, info, warn};
 
-const WIDGET_INDEX: i32 = 3;
+const WIDGET_ID: i32 = 3;
 const BIBLEGATEWAY_VOTD_URL: &str = "https://www.biblegateway.com/votd/get/";
 const DEFAULT_VERSION: &str = "NGU-DE";
 /// Retry interval on fetch failure (1 hour).
@@ -109,11 +109,11 @@ impl DailyVerseWidget {
 }
 
 impl Widget for DailyVerseWidget {
-    fn index(&self) -> i32 {
-        WIDGET_INDEX
+    fn id(&self) -> i32 {
+        WIDGET_ID
     }
 
-    fn init(&mut self, dashboard: &crate::Dashboard, _fallback_widget: i32) {
+    fn init(&mut self, dashboard: &crate::Dashboard) {
         let ui_handle = dashboard.as_weak();
         let config = self
             .config

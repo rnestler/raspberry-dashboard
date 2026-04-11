@@ -47,19 +47,14 @@ pub struct WidgetController {
 }
 
 impl WidgetController {
-    /// Initialise every widget (main-thread setup + background thread spawning).
+    /// Set the initial widget and initialise every widget
+    /// (main-thread setup + background thread spawning).
     pub fn init_all(&mut self, dashboard: &crate::Dashboard) {
+        self.current.set(0);
+        dashboard.set_current_widget(self.widgets[0].id());
         for w in self.widgets.iter_mut() {
             w.init(dashboard);
         }
-    }
-
-    /// The ID of the first enabled widget (used as initial display).
-    ///
-    /// Also sets the internal position to 0.
-    pub fn first_id(&self) -> i32 {
-        self.current.set(0);
-        self.widgets[0].id()
     }
 
     /// Number of enabled widgets.

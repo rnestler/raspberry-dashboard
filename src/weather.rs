@@ -94,6 +94,26 @@ fn condition_symbol(condition: &str) -> &'static str {
     }
 }
 
+fn condition_label(condition: &str) -> &'static str {
+    match condition {
+        "sunny" => "Sonnig",
+        "clear-night" => "Klare Nacht",
+        "partlycloudy" => "Teilweise bewölkt",
+        "cloudy" => "Bewölkt",
+        "rainy" => "Regnerisch",
+        "pouring" => "Starkregen",
+        "snowy" => "Schnee",
+        "snowy-rainy" => "Schneeregen",
+        "fog" => "Nebel",
+        "hail" => "Hagel",
+        "lightning" => "Gewitter",
+        "lightning-rainy" => "Gewitter mit Regen",
+        "windy" | "windy-variant" => "Windig",
+        "exceptional" => "Aussergewöhnlich",
+        _ => "Unbekannt",
+    }
+}
+
 // ── Fetch helpers ───────────────────────────────────────────────────
 
 async fn fetch_current(
@@ -227,7 +247,7 @@ async fn run_weather_client(
                     .unwrap_or_default();
 
                 dashboard.set_weather_condition_symbol(symbol.into());
-                dashboard.set_weather_condition(state.state.into());
+                dashboard.set_weather_condition(condition_label(&state.state).into());
                 dashboard.set_weather_temp(format!("{temp}{temp_unit}").into());
                 dashboard.set_weather_humidity(humidity.into());
                 dashboard.set_weather_wind(wind.into());

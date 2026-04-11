@@ -3,7 +3,8 @@ import { NowPlayingWidget } from "nowplaying.slint";
 import { HomeAssistantWidget, SensorData } from "homeassistant.slint";
 import { DailyVerseWidget } from "dailyverse.slint";
 import { QuotesWidget } from "quotes.slint";
-export { SensorData }
+import { WeatherWidget, ForecastEntry } from "weather.slint";
+export { SensorData, ForecastEntry }
 
 export component Dashboard inherits Window {
     in property <int> current-widget: 0;
@@ -31,6 +32,14 @@ export component Dashboard inherits Window {
     // Quotes widget properties
     in property <string> quote-text: "";
     in property <string> quote-source: "";
+
+    // Weather widget properties
+    in property <string> weather-condition-symbol: "";
+    in property <string> weather-condition: "";
+    in property <string> weather-temp: "";
+    in property <string> weather-humidity: "";
+    in property <string> weather-wind: "";
+    in property <[ForecastEntry]> weather-forecasts;
 
     callback next-widget();
     callback activate-widget(/* id */ int);
@@ -85,5 +94,15 @@ export component Dashboard inherits Window {
         current-time: root.current-time;
         quote-text: root.quote-text;
         quote-source: root.quote-source;
+    }
+
+    if root.current-widget == 5: WeatherWidget {
+        current-time: root.current-time;
+        weather-condition-symbol: root.weather-condition-symbol;
+        weather-condition: root.weather-condition;
+        weather-temp: root.weather-temp;
+        weather-humidity: root.weather-humidity;
+        weather-wind: root.weather-wind;
+        weather-forecasts: root.weather-forecasts;
     }
 }

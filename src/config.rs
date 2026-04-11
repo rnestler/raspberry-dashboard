@@ -8,6 +8,7 @@ pub struct Config {
     pub homeassistant: Option<HomeAssistantConfig>,
     pub daily_verse: Option<DailyVerseConfig>,
     pub quotes: Option<QuotesConfig>,
+    pub weather: Option<WeatherConfig>,
     /// Automatically advance to the next enabled widget every N seconds.
     pub widget_cycle_secs: Option<u64>,
 }
@@ -60,6 +61,17 @@ pub struct SensorConfig {
 /// `HOMEASSISTANT_TOKEN` environment variable.
 pub fn homeassistant_token() -> Option<String> {
     std::env::var("HOMEASSISTANT_TOKEN").ok()
+}
+
+#[derive(Debug, Deserialize)]
+pub struct WeatherConfig {
+    pub url: String,
+    pub entity_id: String,
+    pub poll_interval_secs: Option<u64>,
+    /// Number of forecast days to display (default: 5).
+    pub forecast_days: Option<usize>,
+    /// Forecast type: "daily" (default), "hourly", or "twice_daily".
+    pub forecast_type: Option<String>,
 }
 
 pub fn load_config() -> Config {

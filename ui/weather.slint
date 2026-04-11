@@ -28,6 +28,7 @@ component ForecastCard inherits Rectangle {
         }
         Text {
             text: root.condition-symbol;
+            color: white;
             font-size: 36px;
             horizontal-alignment: center;
         }
@@ -75,6 +76,7 @@ export component WeatherWidget inherits Rectangle {
             spacing: 20px;
 
             Text {
+                color: white;
                 text: root.weather-condition-symbol;
                 font-size: 96px;
                 vertical-alignment: center;

@@ -164,6 +164,21 @@ fn build_gauge_data(
     })
 }
 
+fn plain_card(label: &str, value: &str, unit: &str) -> crate::SensorData {
+    crate::SensorData {
+        label: label.into(),
+        value: value.into(),
+        unit: unit.into(),
+        is_gauge: false,
+        min_value: 0.0,
+        max_value: 0.0,
+        current_value: 0.0,
+        threshold1: 0.0,
+        threshold2: 0.0,
+        threshold3: 0.0,
+    }
+}
+
 async fn run_homeassistant_client(
     config: HomeAssistantConfig,
     ui_handle: slint::Weak<crate::Dashboard>,
@@ -190,34 +205,10 @@ async fn run_homeassistant_client(
             let is_gauge = sensor.sensor_type.as_deref() == Some("gauge");
 
             let data = if is_gauge {
-                build_gauge_data(sensor, label, &value, &unit).unwrap_or_else(|| {
-                    // Fall back to a plain card if gauge config is invalid.
-                    crate::SensorData {
-                        label: label.as_str().into(),
-                        value: value.as_str().into(),
-                        unit: unit.as_str().into(),
-                        is_gauge: false,
-                        min_value: 0.0,
-                        max_value: 0.0,
-                        current_value: 0.0,
-                        threshold1: 0.0,
-                        threshold2: 0.0,
-                        threshold3: 0.0,
-                    }
-                })
+                build_gauge_data(sensor, label, &value, &unit)
+                    .unwrap_or_else(|| plain_card(label, &value, &unit))
             } else {
-                crate::SensorData {
-                    label: label.as_str().into(),
-                    value: value.as_str().into(),
-                    unit: unit.as_str().into(),
-                    is_gauge: false,
-                    min_value: 0.0,
-                    max_value: 0.0,
-                    current_value: 0.0,
-                    threshold1: 0.0,
-                    threshold2: 0.0,
-                    threshold3: 0.0,
-                }
+                plain_card(label, &value, &unit)
             };
             readings.push(data);
         }

@@ -60,3 +60,5 @@ Configure the Snapcast host and other settings in the config file pointed to by 
 ![Snapcast widget](./images/snapcast-widget.png)
 
 ![Home Assistant widget](./images/homeassistant-widget.png)
+
+![Weather widget](./images/weather-widget.png)

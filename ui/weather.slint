@@ -1,0 +1,153 @@
+export struct ForecastEntry {
+    day: string,
+    condition-symbol: string,
+    temp-high: string,
+    temp-low: string,
+}
+
+component ForecastCard inherits Rectangle {
+    in property <string> day;
+    in property <string> condition-symbol;
+    in property <string> temp-high;
+    in property <string> temp-low;
+
+    border-radius: 8px;
+    background: #1a1a1a;
+    min-width: 100px;
+
+    VerticalLayout {
+        padding: 12px;
+        spacing: 6px;
+        alignment: center;
+
+        Text {
+            text: root.day;
+            color: #888888;
+            font-size: 22px;
+            horizontal-alignment: center;
+        }
+        Text {
+            text: root.condition-symbol;
+            color: white;
+            font-size: 36px;
+            horizontal-alignment: center;
+        }
+        Text {
+            text: root.temp-high;
+            color: white;
+            font-size: 24px;
+            horizontal-alignment: center;
+        }
+        Text {
+            text: root.temp-low;
+            color: #888888;
+            font-size: 20px;
+            horizontal-alignment: center;
+        }
+    }
+}
+
+export component WeatherWidget inherits Rectangle {
+    in property <string> current-time: "00:00:00";
+    in property <string> weather-condition-symbol: "";
+    in property <string> weather-condition: "";
+    in property <string> weather-temp: "";
+    in property <string> weather-humidity: "";
+    in property <string> weather-wind: "";
+    in property <[ForecastEntry]> weather-forecasts;
+
+    VerticalLayout {
+        padding: 40px;
+        spacing: 10px;
+
+        // Time display (consistent with other widgets)
+        Text {
+            text: root.current-time;
+            color: white;
+            font-size: 54px;
+            horizontal-alignment: center;
+        }
+
+        Rectangle { vertical-stretch: 1; }
+
+        // Current conditions — centered block
+        HorizontalLayout {
+            alignment: center;
+            spacing: 20px;
+
+            Text {
+                color: white;
+                text: root.weather-condition-symbol;
+                font-size: 96px;
+                vertical-alignment: center;
+            }
+            VerticalLayout {
+                alignment: center;
+                spacing: 4px;
+
+                Text {
+                    text: root.weather-temp;
+                    color: white;
+                    font-size: 72px;
+                }
+                Text {
+                    text: root.weather-condition;
+                    color: #aaaaaa;
+                    font-size: 28px;
+                }
+            }
+        }
+
+        // Secondary info row
+        HorizontalLayout {
+            alignment: center;
+            spacing: 40px;
+
+            HorizontalLayout {
+                spacing: 8px;
+                Text {
+                    text: "💧";
+                    font-size: 24px;
+                    vertical-alignment: center;
+                }
+                Text {
+                    text: root.weather-humidity;
+                    color: #cccccc;
+                    font-size: 24px;
+                    vertical-alignment: center;
+                }
+            }
+            HorizontalLayout {
+                spacing: 8px;
+                Text {
+                    text: "💨";
+                    font-size: 24px;
+                    vertical-alignment: center;
+                }
+                Text {
+                    text: root.weather-wind;
+                    color: #cccccc;
+                    font-size: 24px;
+                    vertical-alignment: center;
+                }
+            }
+        }
+
+        Rectangle { vertical-stretch: 1; }
+
+        // Forecast row
+        HorizontalLayout {
+            alignment: center;
+            spacing: 16px;
+
+            for entry in root.weather-forecasts: ForecastCard {
+                day: entry.day;
+                condition-symbol: entry.condition-symbol;
+                temp-high: entry.temp-high;
+                temp-low: entry.temp-low;
+            }
+        }
+
+        Rectangle { height: 20px; }
+    }
+}

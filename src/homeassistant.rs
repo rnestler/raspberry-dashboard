@@ -12,12 +12,14 @@ const WIDGET_ID: i32 = 0;
 /// Home Assistant instance at a configurable interval.
 pub struct HomeAssistantWidget {
     config: Option<HomeAssistantConfig>,
+    token: String,
 }
 
 impl HomeAssistantWidget {
-    pub fn new(config: HomeAssistantConfig) -> Self {
+    pub fn new(config: HomeAssistantConfig, token: String) -> Self {
         Self {
             config: Some(config),
+            token,
         }
     }
 }
@@ -33,9 +35,10 @@ impl Widget for HomeAssistantWidget {
             .config
             .take()
             .expect("HomeAssistantWidget::init called twice");
+        let token = self.token.clone();
         std::thread::spawn(move || {
             let rt = tokio::runtime::Runtime::new().unwrap();
-            rt.block_on(run_homeassistant_client(config, ui_handle));
+            rt.block_on(run_homeassistant_client(config, token, ui_handle));
         });
     }
 }
@@ -181,6 +184,7 @@ fn plain_card(label: &str, value: &str, unit: &str) -> crate::SensorData {
 
 async fn run_homeassistant_client(
     config: HomeAssistantConfig,
+    token: String,
     ui_handle: slint::Weak<crate::Dashboard>,
 ) {
     info!(
@@ -195,10 +199,9 @@ async fn run_homeassistant_client(
         let mut readings: Vec<crate::SensorData> = Vec::new();
 
         for sensor in &config.sensors {
-            let (value, unit) =
-                fetch_sensor(&client, &config.url, &config.token, &sensor.entity_id)
-                    .await
-                    .unwrap_or_else(|| ("unavailable".into(), String::new()));
+            let (value, unit) = fetch_sensor(&client, &config.url, &token, &sensor.entity_id)
+                .await
+                .unwrap_or_else(|| ("unavailable".into(), String::new()));
 
             let label = &sensor.label;
             let is_gauge = sensor.sensor_type.as_deref() == Some("gauge");

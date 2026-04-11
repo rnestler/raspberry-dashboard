@@ -7,6 +7,7 @@ mod dailyverse;
 mod homeassistant;
 mod quotes;
 mod snapcast;
+mod weather;
 mod widget;
 
 slint::include_modules!();

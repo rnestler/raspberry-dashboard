@@ -32,7 +32,7 @@ text = "In the middle of every difficulty lies opportunity."
 
 [homeassistant]
 url = "http://homeassistant.local:8123"
-token = "your-long-lived-access-token"
+# Token is read from the HOMEASSISTANT_TOKEN environment variable.
 poll_interval_secs = 30
 
 # Plain card (default when sensor_type is omitted)
@@ -78,3 +78,16 @@ sensor_type = "gauge"
 min = 15.0
 max = 30.0
 thresholds = [18.0, 21.0, 25.0]
+
+# Weather widget: displays current conditions and a multi-day forecast
+# from a Home Assistant weather entity.
+# Only active (and included in the cycle) when this section is present.
+# Requires the HOMEASSISTANT_TOKEN environment variable.
+[weather]
+url = "http://homeassistant.local:8123"
+entity_id = "weather.forecast_home"
+poll_interval_secs = 300
+# Number of forecast entries to display (default: 5).
+# forecast_days = 5
+# Forecast type: "daily" (default), "hourly", or "twice_daily".
+# forecast_type = "daily"

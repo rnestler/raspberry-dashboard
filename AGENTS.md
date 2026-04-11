@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-A Raspberry Pi dashboard application built with Rust and [Slint](https://slint.dev/) UI framework. Displays switchable widgets on a Raspberry Pi 3B+ connected to a screen. Widgets: Clock, Snapcast now-playing, Home Assistant sensors (plain cards and gauges), Daily Verse (BibleGateway), and Quotes (user-configured). Automatically switches to the now-playing widget when a Snapcast stream is playing. Unconfigured optional widgets are excluded from the TAB cycle. An optional auto-cycle timer advances widgets on a configurable interval.
+A Raspberry Pi dashboard application built with Rust and [Slint](https://slint.dev/) UI framework. Displays switchable widgets on a Raspberry Pi 3B+ connected to a screen. Widgets: Clock, Snapcast now-playing, Home Assistant sensors (plain cards and gauges), Daily Verse (BibleGateway), Quotes (user-configured), and Weather (Home Assistant weather entity). Automatically switches to the now-playing widget when a Snapcast stream is playing. Unconfigured optional widgets are excluded from the TAB cycle. An optional auto-cycle timer advances widgets on a configurable interval.
 
 ## Build & Run
 
@@ -32,7 +32,7 @@ The `backend-linuxkms-noseat` feature is used for Pi deployment (renders without
 ### Two-thread model
 
 - **Main thread**: Runs the Slint event loop, owns all UI state. Slint timers handle clock updates (1s), screensaver repositioning (5s), and optional auto-cycle widget switching.
-- **Background threads**: Each async client (Snapcast, Home Assistant, Daily Verse) runs in its own thread with a tokio runtime. They communicate UI updates to the main thread via `slint::invoke_from_event_loop()`. The Quotes and Clock widgets have no background threads and run entirely on the main thread.
+- **Background threads**: Each async client (Snapcast, Home Assistant, Daily Verse, Weather) runs in its own thread with a tokio runtime. They communicate UI updates to the main thread via `slint::invoke_from_event_loop()`. The Quotes and Clock widgets have no background threads and run entirely on the main thread.
 
 ### Widget trait and factory (`src/widget.rs`)
 
@@ -46,7 +46,7 @@ To add a new widget: create a module with a struct implementing `Widget`, regist
 - `on_activate(&self, &Dashboard)` — called each time the widget becomes visible. Used by Quotes to pick a new random quote; no-op for others.
 - `is_active(&self) -> bool` — whether the widget should be included in auto-cycle rotation. Default: `true`. Snapcast returns `false` when nothing is playing, causing the auto-cycle timer to skip it. Manual TAB switching still reaches inactive widgets.
 
-Widget indices: 0 = HomeAssistant (optional), 1 = NowPlaying (Snapcast, optional), 2 = Clock (always), 3 = DailyVerse (optional), 4 = Quotes (optional).
+Widget indices: 0 = HomeAssistant (optional), 1 = NowPlaying (Snapcast, optional), 2 = Clock (always), 3 = DailyVerse (optional), 4 = Quotes (optional), 5 = Weather (optional).
 
 The 1-second `current_time` timer is a dashboard-level concern in `main.rs` (all widgets display the time via the shared Slint property).
 
@@ -57,6 +57,14 @@ Uses the `snapcast-control` crate (async/tokio) to connect to a Snapcast server 
 ### Slint ↔ Rust boundary
 
 `slint::include_modules!()` generates Rust types from `.slint` files at compile time. All Dashboard properties and callbacks declared in `dashboard.slint` become setter/getter methods on the generated `Dashboard` struct. `build.rs` compiles `ui/dashboard.slint` (which imports the other `.slint` files).
+
+### Home Assistant authentication
+
+The HA long-lived access token is read from the `HOMEASSISTANT_TOKEN` environment variable (not from config files). Both the HomeAssistant sensor widget and the Weather widget share this token. If the env var is missing, any configured HA-dependent widget is skipped with a warning.
+
+### Weather widget (`src/weather.rs`)
+
+Uses a Home Assistant weather entity. Fetches current conditions via `GET /api/states/<entity_id>` and forecasts via `POST /api/services/weather/get_forecasts`. HA condition strings are mapped to Unicode weather symbols. Forecast length is configurable (`forecast_days`, default 5). Forecast type can be `"daily"`, `"hourly"`, or `"twice_daily"` (default `"daily"`).
 
 ## Deployment
 

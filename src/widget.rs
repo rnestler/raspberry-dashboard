@@ -112,15 +112,22 @@ impl WidgetController {
 /// return a [`WidgetController`] that owns them.
 ///
 /// Widget order: HomeAssistant (0), NowPlaying/Snapcast (1), Clock (2),
-/// DailyVerse (3), Quotes (4).  Optional widgets are only included when
-/// their config section is present.
+/// DailyVerse (3), Quotes (4), Weather (5).  Optional widgets are only
+/// included when their config section is present.
 pub fn create_widgets(config: Config) -> WidgetController {
     let mut widgets: Vec<Box<dyn Widget>> = Vec::new();
+    let ha_token = crate::config::homeassistant_token();
 
     if let Some(ha_config) = config.homeassistant {
-        widgets.push(Box::new(crate::homeassistant::HomeAssistantWidget::new(
-            ha_config,
-        )));
+        if let Some(token) = ha_token.clone() {
+            widgets.push(Box::new(crate::homeassistant::HomeAssistantWidget::new(
+                ha_config, token,
+            )));
+        } else {
+            log::warn!(
+                "HomeAssistant config present but HOMEASSISTANT_TOKEN not set – skipping widget"
+            );
+        }
     }
     if let Some(sc_config) = config.snapcast {
         widgets.push(Box::new(crate::snapcast::SnapcastWidget::new(sc_config)));
@@ -133,6 +140,16 @@ pub fn create_widgets(config: Config) -> WidgetController {
     }
     if let Some(quotes_config) = config.quotes {
         widgets.push(Box::new(crate::quotes::QuotesWidget::new(quotes_config)));
+    }
+    if let Some(weather_config) = config.weather {
+        if let Some(token) = ha_token {
+            widgets.push(Box::new(crate::weather::WeatherWidget::new(
+                weather_config,
+                token,
+            )));
+        } else {
+            log::warn!("Weather config present but HOMEASSISTANT_TOKEN not set – skipping widget");
+        }
     }
 
     WidgetController {

@@ -190,18 +190,17 @@ async fn run_homeassistant_client(
     );
     let client = reqwest::Client::new();
     let poll_interval = std::time::Duration::from_secs(config.poll_interval_secs.unwrap_or(30));
-    let labels: Vec<String> = config.sensors.iter().map(|s| s.label.clone()).collect();
 
     loop {
         let mut readings: Vec<crate::SensorData> = Vec::new();
 
-        for (i, sensor) in config.sensors.iter().enumerate() {
+        for sensor in &config.sensors {
             let (value, unit) =
                 fetch_sensor(&client, &config.url, &config.token, &sensor.entity_id)
                     .await
                     .unwrap_or_else(|| ("unavailable".into(), String::new()));
 
-            let label = &labels[i];
+            let label = &sensor.label;
             let is_gauge = sensor.sensor_type.as_deref() == Some("gauge");
 
             let data = if is_gauge {

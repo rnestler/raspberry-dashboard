@@ -77,6 +77,7 @@ fn get_now_playing_info(stream: Option<&Stream>) -> Option<NowPlayingInfo> {
         && let Ok(value) = serde_json::to_value(metadata)
         && let Ok(info) = serde_json::from_value::<NowPlayingInfo>(value)
     {
+        log::info!("{info:?}");
         return Some(info);
     }
     None

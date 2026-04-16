@@ -4174,6 +4174,7 @@ dependencies = [
  "chrono",
  "env_logger",
  "htmlize",
+ "image",
  "log",
  "rand 0.10.0",
  "reqwest",

@@ -92,8 +92,37 @@ fn extract_now_playing(state: &Arc<State>) -> Option<NowPlayingInfo> {
     None
 }
 
+fn load_image_from_bytes(data: &[u8]) -> Option<slint::Image> {
+    // Try SVG first.
+    if let Ok(img) = slint::Image::load_from_svg_data(data) {
+        return Some(img);
+    }
+    // Fall back to raster (PNG/JPEG).
+    let decoded = image::load_from_memory(data)
+        .map_err(|e| log::error!("Album art decode error: {e}"))
+        .ok()?;
+    let rgba = decoded.to_rgba8();
+    let buffer = slint::SharedPixelBuffer::<slint::Rgba8Pixel>::clone_from_slice(
+        rgba.as_raw(),
+        rgba.width(),
+        rgba.height(),
+    );
+    Some(slint::Image::from_rgba8(buffer))
+}
+
 async fn fetch_art_bytes(url: &str) -> Option<Vec<u8>> {
-    let bytes = reqwest::get(url).await.ok()?.bytes().await.ok()?;
+    log::info!("Fetching album art from {url}");
+    let response = reqwest::get(url)
+        .await
+        .map_err(|e| log::error!("Album art fetch error: {e}"))
+        .ok()?;
+    log::info!("Album art response status={}", response.status());
+    let bytes = response
+        .bytes()
+        .await
+        .map_err(|e| log::error!("Album art read error: {e}"))
+        .ok()?;
+    log::info!("Album art: {} bytes", bytes.len());
     Some(bytes.to_vec())
 }
 
@@ -131,7 +160,7 @@ async fn push_to_ui(
                 dashboard.set_track_album(info.album.unwrap_or("Unknown Album".into()).into());
                 let art_image = art_bytes
                     .as_deref()
-                    .and_then(|b| slint::Image::load_from_svg_data(b).ok())
+                    .and_then(load_image_from_bytes)
                     .unwrap_or_default();
                 dashboard.set_art_image(art_image);
                 dashboard.invoke_activate_widget(WIDGET_ID);

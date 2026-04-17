@@ -128,23 +128,21 @@ async fn fetch_art_bytes(url: &str) -> Option<Vec<u8>> {
 
 /// Update UI properties and toggle the active flag.
 ///
-/// When `info` is `Some` (stream playing): set track metadata, mark active,
-/// switch dashboard to this widget.
+/// When `info` is `Some` (stream playing): set track metadata and
+/// pre-fetched album art, mark active, switch dashboard to this widget.
 /// When `info` is `None` (no stream): mark inactive, invoke
 /// `deactivate-widget` so the dashboard can switch away.
-async fn push_to_ui(
+fn push_to_ui(
     ui_handle: &slint::Weak<crate::Dashboard>,
     info: Option<&NowPlayingInfo>,
+    art_bytes: Option<&Vec<u8>>,
     status: &str,
     active: &Arc<AtomicBool>,
 ) {
     let handle = ui_handle.clone();
     let info = info.cloned();
     let status = status.to_string();
-    let art_bytes = match info.as_ref().and_then(|i| i.art_url.as_deref()) {
-        Some(url) => fetch_art_bytes(url).await,
-        None => None,
-    };
+    let art_bytes = art_bytes.cloned();
     let is_playing = info.is_some();
     active.store(is_playing, Ordering::Relaxed);
     let _ = slint::invoke_from_event_loop(move || {
@@ -204,6 +202,8 @@ async fn run_snapcast_client(
         return;
     }
 
+    let mut art_cache: Option<(String, Vec<u8>)> = None;
+
     while let Some(messages) = client.recv().await {
         for msg in &messages {
             if let Err(e) = msg {
@@ -211,7 +211,34 @@ async fn run_snapcast_client(
             }
         }
         let info = extract_now_playing(&client.state);
-        push_to_ui(&ui_handle, info.as_ref(), "connected", &active).await;
+        let art_url = info.as_ref().and_then(|i| i.art_url.as_deref());
+
+        // Only re-fetch when the URL changes.
+        let cached_album_art = match art_url {
+            Some(url) => {
+                let hit = art_cache
+                    .as_ref()
+                    .is_some_and(|(cached_url, _)| cached_url == url);
+                if !hit {
+                    art_cache = fetch_art_bytes(url)
+                        .await
+                        .map(|bytes| (url.to_string(), bytes));
+                }
+                art_cache.as_ref().map(|(_, bytes)| bytes)
+            }
+            None => {
+                art_cache = None;
+                None
+            }
+        };
+
+        push_to_ui(
+            &ui_handle,
+            info.as_ref(),
+            cached_album_art,
+            "connected",
+            &active,
+        );
     }
 
     set_connection_status(&ui_handle, "Disconnected");

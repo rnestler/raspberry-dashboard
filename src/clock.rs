@@ -44,7 +44,7 @@ impl Widget for ClockWidget {
                 let window_height = size.height as f32 / scale;
 
                 let text_width: f32 = 450.0;
-                let text_height: f32 = 90.0;
+                let text_height: f32 = 140.0;
 
                 let max_x = (window_width - text_width).max(0.0);
                 let max_y = (window_height - text_height).max(0.0);

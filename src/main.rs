@@ -24,7 +24,7 @@ fn main() {
 
     // Set initial time.
     let now = Local::now();
-    dashboard.set_current_time(now.format("%H:%M:%S").to_string().into());
+    dashboard.set_current_time(now.format("%H:%M").to_string().into());
 
     // Set initial widget and initialise every widget (main-thread setup +
     // background thread spawning).
@@ -92,7 +92,7 @@ fn main() {
                 return;
             };
             let now = Local::now();
-            dashboard.set_current_time(now.format("%H:%M:%S").to_string().into());
+            dashboard.set_current_time(now.format("%H:%M").to_string().into());
         },
     );
 

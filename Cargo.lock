@@ -4136,7 +4136,6 @@ dependencies = [
  "slint",
  "slint-build",
  "snapcast-control",
- "sys-locale",
  "tokio",
  "toml 1.1.2+spec-1.1.0",
 ]

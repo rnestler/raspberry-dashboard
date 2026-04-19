@@ -1,13 +1,18 @@
 use chrono::{Local, Locale};
 use std::rc::Rc;
 
-/// Detect the user's locale using `sys-locale` and translate it to a chrono
-/// `Locale`. Falls back to `Locale::POSIX` if the name is not recognised.
+/// Detect the user's locale from the usual POSIX environment variables.
+///
+/// Returns `Locale::POSIX` if the environment says nothing or the name
+/// is not recognised by chrono.
 fn detect_locale() -> Locale {
-    let name = sys_locale::get_locale()
-        .unwrap_or_default()
-        .replace('-', "_");
-    Locale::try_from(name.as_str()).unwrap_or(Locale::POSIX)
+    let raw = std::env::var("LC_TIME")
+        .or_else(|_| std::env::var("LC_ALL"))
+        .or_else(|_| std::env::var("LANG"))
+        .unwrap_or_default();
+    // Strip encoding suffix: "de_CH.UTF-8" -> "de_CH"
+    let name = raw.split('.').next().unwrap_or("");
+    Locale::try_from(name).unwrap_or(Locale::POSIX)
 }
 
 mod clock;

@@ -14,7 +14,6 @@ slint-build = "1"
 [dependencies]
 slint = { version = "1", default-features = false, features = ["compat-1-2", "std", "renderer-femtovg"] }
 chrono = { version = "0.4", features = ["unstable-locales"] }
-sys-locale = "0.3"
 rand = "0.10"
 reqwest = { version = "0.13", default-features = false, features = ["rustls", "json"] }
 serde = { version = "1", features = ["derive"] }

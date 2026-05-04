@@ -1,6 +1,22 @@
 use std::cell::Cell;
 
+use chrono::{Local, Locale};
+
 use crate::config::Config;
+
+/// Detect the user's locale from the usual POSIX environment variables.
+///
+/// Returns `Locale::POSIX` if the environment says nothing or the name
+/// is not recognised by chrono.
+fn detect_locale() -> Locale {
+    let raw = std::env::var("LC_TIME")
+        .or_else(|_| std::env::var("LC_ALL"))
+        .or_else(|_| std::env::var("LANG"))
+        .unwrap_or_default();
+    // Strip encoding suffix: "de_CH.UTF-8" -> "de_CH"
+    let name = raw.split('.').next().unwrap_or("");
+    Locale::try_from(name).unwrap_or(Locale::POSIX)
+}
 
 /// Common interface for all dashboard widgets.
 ///
@@ -44,6 +60,7 @@ pub trait Widget {
 pub struct WidgetController {
     widgets: Vec<Box<dyn Widget>>,
     current: Cell<usize>,
+    locale: Locale,
 }
 
 impl WidgetController {
@@ -55,6 +72,18 @@ impl WidgetController {
         for w in self.widgets.iter_mut() {
             w.init(dashboard);
         }
+    }
+
+    /// Update the shared `current-time` and `current-date` Slint properties
+    /// using the controller's locale.
+    pub fn update_time(&self, dashboard: &crate::Dashboard) {
+        let now = Local::now();
+        dashboard.set_current_time(now.format("%H:%M").to_string().into());
+        dashboard.set_current_date(
+            now.format_localized("%a %d %b %Y", self.locale)
+                .to_string()
+                .into(),
+        );
     }
 
     /// Number of enabled widgets.
@@ -155,5 +184,6 @@ pub fn create_widgets(config: Config) -> WidgetController {
     WidgetController {
         widgets,
         current: Cell::new(0),
+        locale: detect_locale(),
     }
 }

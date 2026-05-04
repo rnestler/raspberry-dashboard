@@ -1,19 +1,4 @@
-use chrono::{Local, Locale};
 use std::rc::Rc;
-
-/// Detect the user's locale from the usual POSIX environment variables.
-///
-/// Returns `Locale::POSIX` if the environment says nothing or the name
-/// is not recognised by chrono.
-fn detect_locale() -> Locale {
-    let raw = std::env::var("LC_TIME")
-        .or_else(|_| std::env::var("LC_ALL"))
-        .or_else(|_| std::env::var("LANG"))
-        .unwrap_or_default();
-    // Strip encoding suffix: "de_CH.UTF-8" -> "de_CH"
-    let name = raw.split('.').next().unwrap_or("");
-    Locale::try_from(name).unwrap_or(Locale::POSIX)
-}
 
 mod clock;
 mod config;
@@ -36,16 +21,8 @@ fn main() {
 
     let dashboard = Dashboard::new().unwrap();
 
-    let locale = detect_locale();
-
     // Set initial time.
-    let now = Local::now();
-    dashboard.set_current_time(now.format("%H:%M").to_string().into());
-    dashboard.set_current_date(
-        now.format_localized("%a %d %b %Y", locale)
-            .to_string()
-            .into(),
-    );
+    controller.update_time(&dashboard);
 
     // Set initial widget and initialise every widget (main-thread setup +
     // background thread spawning).
@@ -104,6 +81,7 @@ fn main() {
     // Update clock every second (dashboard-level concern — all widgets show
     // the time via the shared `current-time` property).
     let weak = dashboard.as_weak();
+    let ctrl = Rc::clone(&controller);
     let clock_timer = slint::Timer::default();
     clock_timer.start(
         slint::TimerMode::Repeated,
@@ -112,13 +90,7 @@ fn main() {
             let Some(dashboard) = weak.upgrade() else {
                 return;
             };
-            let now = Local::now();
-            dashboard.set_current_time(now.format("%H:%M").to_string().into());
-            dashboard.set_current_date(
-                now.format_localized("%a %d %b %Y", locale)
-                    .to_string()
-                    .into(),
-            );
+            ctrl.update_time(&dashboard);
         },
     );
 

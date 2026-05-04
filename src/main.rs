@@ -1,4 +1,3 @@
-use chrono::Local;
 use std::rc::Rc;
 
 mod clock;
@@ -23,8 +22,7 @@ fn main() {
     let dashboard = Dashboard::new().unwrap();
 
     // Set initial time.
-    let now = Local::now();
-    dashboard.set_current_time(now.format("%H:%M").to_string().into());
+    controller.update_time(&dashboard);
 
     // Set initial widget and initialise every widget (main-thread setup +
     // background thread spawning).
@@ -83,6 +81,7 @@ fn main() {
     // Update clock every second (dashboard-level concern — all widgets show
     // the time via the shared `current-time` property).
     let weak = dashboard.as_weak();
+    let ctrl = Rc::clone(&controller);
     let clock_timer = slint::Timer::default();
     clock_timer.start(
         slint::TimerMode::Repeated,
@@ -91,8 +90,7 @@ fn main() {
             let Some(dashboard) = weak.upgrade() else {
                 return;
             };
-            let now = Local::now();
-            dashboard.set_current_time(now.format("%H:%M").to_string().into());
+            ctrl.update_time(&dashboard);
         },
     );
 

@@ -57,26 +57,37 @@ pub trait Widget {
 /// The controller is the source of truth for which widget position is
 /// currently displayed.  It tracks position internally via a `Cell<usize>`
 /// so callers never need to look up the current widget from Slint.
+///
+/// Holds a [`slint::Weak`] reference to the dashboard so callbacks don't
+/// have to thread it through every call.  Methods are no-ops when the
+/// dashboard has been dropped.
 pub struct WidgetController {
     widgets: Vec<Box<dyn Widget>>,
     current: Cell<usize>,
     locale: Locale,
+    dashboard: slint::Weak<crate::Dashboard>,
 }
 
 impl WidgetController {
     /// Set the initial widget and initialise every widget
     /// (main-thread setup + background thread spawning).
-    pub fn init_all(&mut self, dashboard: &crate::Dashboard) {
+    pub fn init_all(&mut self) {
+        let Some(dashboard) = self.dashboard.upgrade() else {
+            return;
+        };
         self.current.set(0);
         dashboard.set_current_widget(self.widgets[0].id());
         for w in self.widgets.iter_mut() {
-            w.init(dashboard);
+            w.init(&dashboard);
         }
     }
 
     /// Update the shared `current-time` and `current-date` Slint properties
     /// using the controller's locale.
-    pub fn update_time(&self, dashboard: &crate::Dashboard) {
+    pub fn update_time(&self) {
+        let Some(dashboard) = self.dashboard.upgrade() else {
+            return;
+        };
         let now = Local::now();
         dashboard.set_current_time(now.format("%H:%M").to_string().into());
         dashboard.set_current_date(
@@ -96,9 +107,9 @@ impl WidgetController {
     /// Used by the `activate-widget` Slint callback so that background
     /// threads (e.g. Snapcast) can request a specific widget.  Updates
     /// internal position, sets the Slint property, and calls `on_activate`.
-    pub fn switch_to(&self, dashboard: &crate::Dashboard, id: i32) {
+    pub fn switch_to(&self, id: i32) {
         if let Some(pos) = self.widgets.iter().position(|w| w.id() == id) {
-            self.show(dashboard, pos);
+            self.show(pos);
         }
     }
 
@@ -107,13 +118,13 @@ impl WidgetController {
     /// When `active_only` is true, inactive widgets are skipped (used by
     /// the auto-cycle timer and `deactivate_current`).  When false, all
     /// enabled widgets are candidates (used by manual TAB switching).
-    pub fn advance(&self, dashboard: &crate::Dashboard, active_only: bool) {
+    pub fn advance(&self, active_only: bool) {
         let cur = self.current.get();
         let len = self.widgets.len();
         for offset in 1..=len {
             let pos = (cur + offset) % len;
             if !active_only || self.widgets[pos].is_active() {
-                self.show(dashboard, pos);
+                self.show(pos);
                 return;
             }
         }
@@ -122,18 +133,21 @@ impl WidgetController {
 
     /// If the currently displayed widget is inactive, advance to the
     /// next active widget.
-    pub fn deactivate_current(&self, dashboard: &crate::Dashboard) {
+    pub fn deactivate_current(&self) {
         if !self.widgets[self.current.get()].is_active() {
-            self.advance(dashboard, true);
+            self.advance(true);
         }
     }
 
     /// Internal helper: switch to the widget at `pos`.
-    fn show(&self, dashboard: &crate::Dashboard, pos: usize) {
+    fn show(&self, pos: usize) {
+        let Some(dashboard) = self.dashboard.upgrade() else {
+            return;
+        };
         self.current.set(pos);
         let w = &self.widgets[pos];
         dashboard.set_current_widget(w.id());
-        w.on_activate(dashboard);
+        w.on_activate(&dashboard);
     }
 }
 
@@ -143,7 +157,10 @@ impl WidgetController {
 /// Widget order: HomeAssistant (0), NowPlaying/Snapcast (1), Clock (2),
 /// DailyVerse (3), Quotes (4), Weather (5).  Optional widgets are only
 /// included when their config section is present.
-pub fn create_widgets(config: Config) -> WidgetController {
+pub fn create_widgets(
+    config: Config,
+    dashboard: slint::Weak<crate::Dashboard>,
+) -> WidgetController {
     let mut widgets: Vec<Box<dyn Widget>> = Vec::new();
     let ha_token = crate::config::homeassistant_token();
 
@@ -185,5 +202,6 @@ pub fn create_widgets(config: Config) -> WidgetController {
         widgets,
         current: Cell::new(0),
         locale: detect_locale(),
+        dashboard,
     }
 }

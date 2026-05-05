@@ -16,17 +16,17 @@ fn main() {
     let config = config::load_config();
     let widget_cycle_secs = config.widget_cycle_secs;
 
-    // Build the widget controller from config.
-    let mut controller = widget::create_widgets(config);
-
     let dashboard = Dashboard::new().unwrap();
 
+    // Build the widget controller from config.
+    let mut controller = widget::create_widgets(config, dashboard.as_weak());
+
     // Set initial time.
-    controller.update_time(&dashboard);
+    controller.update_time();
 
     // Set initial widget and initialise every widget (main-thread setup +
     // background thread spawning).
-    controller.init_all(&dashboard);
+    controller.init_all();
 
     // Wrap in Rc for sharing with closures.
     let controller = Rc::new(controller);
@@ -37,37 +37,28 @@ fn main() {
 
     // Widget switching via TAB — cycles through ALL enabled widgets
     // (including inactive ones).  Also restarts the auto-cycle timer.
-    let weak = dashboard.as_weak();
     let cycle_timer_tab = Rc::clone(&cycle_timer);
     let ctrl = Rc::clone(&controller);
     dashboard.on_next_widget(move || {
-        if let Some(d) = weak.upgrade() {
-            ctrl.advance(&d, false);
-            // Restart the cycle timer so the user gets a full interval after
-            // a manual switch.
-            if cycle_timer_tab.running() {
-                cycle_timer_tab.restart();
-            }
+        ctrl.advance(false);
+        // Restart the cycle timer so the user gets a full interval after
+        // a manual switch.
+        if cycle_timer_tab.running() {
+            cycle_timer_tab.restart();
         }
     });
 
     // A widget has been deactivated — if the currently displayed widget is
     // inactive, switch to the next active one.
-    let weak = dashboard.as_weak();
     let ctrl = Rc::clone(&controller);
     dashboard.on_deactivate_widget(move || {
-        if let Some(d) = weak.upgrade() {
-            ctrl.deactivate_current(&d);
-        }
+        ctrl.deactivate_current();
     });
 
     // A background thread wants to switch to a specific widget by ID.
-    let weak = dashboard.as_weak();
     let ctrl = Rc::clone(&controller);
     dashboard.on_activate_widget(move |id| {
-        if let Some(d) = weak.upgrade() {
-            ctrl.switch_to(&d, id);
-        }
+        ctrl.switch_to(id);
     });
 
     // Quit via "q"
@@ -80,17 +71,13 @@ fn main() {
 
     // Update clock every second (dashboard-level concern — all widgets show
     // the time via the shared `current-time` property).
-    let weak = dashboard.as_weak();
     let ctrl = Rc::clone(&controller);
     let clock_timer = slint::Timer::default();
     clock_timer.start(
         slint::TimerMode::Repeated,
         std::time::Duration::from_secs(1),
         move || {
-            let Some(dashboard) = weak.upgrade() else {
-                return;
-            };
-            ctrl.update_time(&dashboard);
+            ctrl.update_time();
         },
     );
 
@@ -98,16 +85,12 @@ fn main() {
     if let Some(secs) = widget_cycle_secs
         && controller.len() > 1
     {
-        let weak = dashboard.as_weak();
         let ctrl = Rc::clone(&controller);
         cycle_timer.start(
             slint::TimerMode::Repeated,
             std::time::Duration::from_secs(secs),
             move || {
-                let Some(d) = weak.upgrade() else {
-                    return;
-                };
-                ctrl.advance(&d, true);
+                ctrl.advance(true);
             },
         );
     }

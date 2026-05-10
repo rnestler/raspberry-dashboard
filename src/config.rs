@@ -11,6 +11,9 @@ pub struct Config {
     pub weather: Option<WeatherConfig>,
     /// Automatically advance to the next enabled widget every N seconds.
     pub widget_cycle_secs: Option<u64>,
+    /// When the screen is blanked (with the "b" key), also send a CEC standby
+    /// command to the connected display.
+    pub cec_standby_on_blank: Option<bool>,
 }
 
 #[derive(Debug, Deserialize)]

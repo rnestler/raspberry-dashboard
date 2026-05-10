@@ -1,3 +1,4 @@
+use std::cell::Cell;
 use std::rc::Rc;
 
 mod clock;
@@ -5,6 +6,7 @@ mod config;
 mod dailyverse;
 mod homeassistant;
 mod quotes;
+mod screen;
 mod snapcast;
 mod weather;
 mod widget;
@@ -15,6 +17,7 @@ fn main() {
     env_logger::init();
     let config = config::load_config();
     let widget_cycle_secs = config.widget_cycle_secs;
+    let use_cec = config.cec_standby_on_blank.unwrap_or(false);
 
     let dashboard = Dashboard::new().unwrap();
 
@@ -35,16 +38,50 @@ fn main() {
     // TAB callback (to restart it on manual switch).
     let cycle_timer = Rc::new(slint::Timer::default());
 
+    // Tracks whether the screen is currently blanked (toggled by "b").
+    let blanked = Rc::new(Cell::new(false));
+
     // Widget switching via TAB — cycles through ALL enabled widgets
-    // (including inactive ones).  Also restarts the auto-cycle timer.
+    // (including inactive ones).  Also restarts the auto-cycle timer and
+    // unblanks the screen if it was blanked.
     let cycle_timer_tab = Rc::clone(&cycle_timer);
     let ctrl = Rc::clone(&controller);
+    let blanked_tab = Rc::clone(&blanked);
+    let weak_tab = dashboard.as_weak();
     dashboard.on_next_widget(move || {
+        if blanked_tab.get() {
+            blanked_tab.set(false);
+            if let Some(d) = weak_tab.upgrade() {
+                d.set_blanked(false);
+            }
+            if use_cec {
+                screen::cec_on();
+            }
+        }
         ctrl.advance(false);
         // Restart the cycle timer so the user gets a full interval after
         // a manual switch.
         if cycle_timer_tab.running() {
             cycle_timer_tab.restart();
+        }
+    });
+
+    // Toggle screen blanking on "b".  Optionally also sends a CEC standby /
+    // on command to the connected display.
+    let blanked_cb = Rc::clone(&blanked);
+    let weak_cb = dashboard.as_weak();
+    dashboard.on_blank_toggle(move || {
+        let new_state = !blanked_cb.get();
+        blanked_cb.set(new_state);
+        if let Some(d) = weak_cb.upgrade() {
+            d.set_blanked(new_state);
+        }
+        if use_cec {
+            if new_state {
+                screen::cec_standby();
+            } else {
+                screen::cec_on();
+            }
         }
     });
 

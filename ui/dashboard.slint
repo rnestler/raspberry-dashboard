@@ -42,9 +42,12 @@ export component Dashboard inherits Window {
     in property <string> weather-wind: "";
     in property <[ForecastEntry]> weather-forecasts;
 
+    in property <bool> blanked: false;
+
     callback next-widget();
     callback activate-widget(/* id */ int);
     callback deactivate-widget();
+    callback blank-toggle();
     callback quit();
 
     background: black;
@@ -56,6 +59,10 @@ export component Dashboard inherits Window {
                 root.next-widget();
                 return accept;
             }
+            if event.text == "b" {
+                root.blank-toggle();
+                return accept;
+            }
             if event.text == "q" {
                 root.quit();
                 return accept;
@@ -64,12 +71,12 @@ export component Dashboard inherits Window {
         }
     }
 
-    if root.current-widget == 0: HomeAssistantWidget {
+    if !root.blanked && root.current-widget == 0: HomeAssistantWidget {
         current-time: root.current-time;
         sensors: root.sensors;
     }
 
-    if root.current-widget == 1: NowPlayingWidget {
+    if !root.blanked && root.current-widget == 1: NowPlayingWidget {
         current-time: root.current-time;
         track-title: root.track-title;
         track-artist: root.track-artist;
@@ -78,27 +85,27 @@ export component Dashboard inherits Window {
         connection-status: root.connection-status;
     }
 
-    if root.current-widget == 2: ClockWidget {
+    if !root.blanked && root.current-widget == 2: ClockWidget {
         current-time: root.current-time;
         current-date: root.current-date;
         time-x: root.time-x;
         time-y: root.time-y;
     }
 
-    if root.current-widget == 3: DailyVerseWidget {
+    if !root.blanked && root.current-widget == 3: DailyVerseWidget {
         current-time: root.current-time;
         verse-text: root.verse-text;
         verse-reference: root.verse-reference;
         verse-version: root.verse-version;
     }
 
-    if root.current-widget == 4: QuotesWidget {
+    if !root.blanked && root.current-widget == 4: QuotesWidget {
         current-time: root.current-time;
         quote-text: root.quote-text;
         quote-source: root.quote-source;
     }
 
-    if root.current-widget == 5: WeatherWidget {
+    if !root.blanked && root.current-widget == 5: WeatherWidget {
         current-time: root.current-time;
         weather-condition-symbol: root.weather-condition-symbol;
         weather-condition: root.weather-condition;

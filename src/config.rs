@@ -31,8 +31,10 @@ pub struct QuoteItem {
 
 #[derive(Debug, Deserialize)]
 pub struct DailyVerseConfig {
-    /// BibleGateway version ID (e.g. "NGU-DE", "LUTH1912"). Defaults to "NGU-DE".
-    pub version: Option<String>,
+    /// Ordered list of BibleGateway version IDs. The widget tries each in
+    /// turn and uses the first that returns a verse — useful as a fallback
+    /// when a preferred translation doesn't cover every book.
+    pub versions: Option<Vec<String>>,
 }
 
 #[derive(Debug, Deserialize)]

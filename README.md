@@ -39,7 +39,7 @@ Key sections:
 - `widget_cycle_secs` — auto-cycle interval in seconds (optional; TAB resets the timer)
 - `[snapcast]` — Snapcast server `host` address (e.g. `"127.0.0.1:1705"`); enables the now-playing widget
 - `[homeassistant]` — Home Assistant URL, poll interval, and sensor list (supports plain cards and gauges); requires `HOMEASSISTANT_TOKEN`
-- `[daily_verse]` — enables the Daily Verse widget; optionally set `version` for a BibleGateway translation (default: `NGU-DE`)
+- `[daily_verse]` — enables the Daily Verse widget; optionally set `versions` to an ordered list of BibleGateway translations (e.g. `["NGU-DE", "SCH2000"]`); the widget uses the first one that returns a verse (default: `["NGU-DE", "SCH2000"]`)
 - `[[quotes.items]]` — list of quotes for the Quotes widget; each entry has a `text` and an optional `source`
 - `[weather]` — Home Assistant weather entity URL, entity ID, poll interval, forecast days (default: 5), and forecast type (`"daily"`, `"hourly"`, or `"twice_daily"`); requires `HOMEASSISTANT_TOKEN`
 

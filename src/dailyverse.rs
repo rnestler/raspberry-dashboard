@@ -6,7 +6,7 @@ use log::{error, info, warn};
 
 const WIDGET_ID: i32 = 3;
 const BIBLEGATEWAY_VOTD_URL: &str = "https://www.biblegateway.com/votd/get/";
-const DEFAULT_VERSION: &str = "NGU-DE";
+const DEFAULT_VERSIONS: &[&str] = &["NGU-DE", "SCH2000"];
 /// Retry interval on fetch failure (1 hour).
 const RETRY_SECS: u64 = 3600;
 
@@ -151,17 +151,24 @@ async fn run_daily_verse_client(
     config: DailyVerseConfig,
     ui_handle: slint::Weak<crate::Dashboard>,
 ) {
-    let version = config
-        .version
-        .as_deref()
-        .unwrap_or(DEFAULT_VERSION)
-        .to_string();
-    info!("Starting daily verse client (version={version})");
+    let versions: Vec<String> = config
+        .versions
+        .filter(|v| !v.is_empty())
+        .unwrap_or_else(|| DEFAULT_VERSIONS.iter().map(|s| s.to_string()).collect());
+    info!("Starting daily verse client (versions={versions:?})");
 
     let client = reqwest::Client::new();
 
     loop {
-        match fetch_verse(&client, &version).await {
+        let mut got_verse = None;
+        for version in &versions {
+            if let Some(votd) = fetch_verse(&client, version).await {
+                got_verse = Some(votd);
+                break;
+            }
+        }
+
+        match got_verse {
             Some(votd) => {
                 let text = decode_html(&votd.text);
                 let reference = decode_html(&votd.display_ref);
@@ -174,7 +181,10 @@ async fn run_daily_verse_client(
                 tokio::time::sleep(std::time::Duration::from_secs(sleep_secs)).await;
             }
             None => {
-                warn!("Daily verse: fetch failed, retrying in {RETRY_SECS}s");
+                warn!(
+                    "Daily verse: all {} version(s) failed, retrying in {RETRY_SECS}s",
+                    versions.len()
+                );
                 tokio::time::sleep(std::time::Duration::from_secs(RETRY_SECS)).await;
             }
         }

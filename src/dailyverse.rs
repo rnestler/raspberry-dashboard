@@ -11,8 +11,10 @@ const DEFAULT_VERSION: &str = "NGU-DE";
 const RETRY_SECS: u64 = 3600;
 
 #[derive(Debug, serde::Deserialize)]
-struct VotdResponse {
-    votd: VotdData,
+#[serde(untagged)]
+enum VotdResponse {
+    Success { votd: VotdData },
+    Error { error: VotdError },
 }
 
 #[derive(Debug, serde::Deserialize)]
@@ -20,6 +22,12 @@ struct VotdData {
     text: String,
     display_ref: String,
     version: String,
+}
+
+#[derive(Debug, serde::Deserialize)]
+struct VotdError {
+    code: String,
+    message: String,
 }
 
 /// Fetch the verse of the day for the given BibleGateway version ID.
@@ -35,21 +43,34 @@ async fn fetch_verse(client: &reqwest::Client, version: &str) -> Option<VotdData
         }
     };
 
-    if !response.status().is_success() {
-        error!("Daily verse fetch returned status {}", response.status());
+    let status = response.status();
+    let body = match response.text().await {
+        Ok(b) => b,
+        Err(e) => {
+            error!("Daily verse fetch: failed to read body (status {status}): {e}");
+            return None;
+        }
+    };
+
+    if !status.is_success() {
+        error!("Daily verse fetch returned status {status}: {body}");
         return None;
     }
 
-    match response.json::<VotdResponse>().await {
-        Ok(r) => {
-            info!(
-                "Got daily verse: {} ({})",
-                r.votd.display_ref, r.votd.version
+    match serde_json::from_str::<VotdResponse>(&body) {
+        Ok(VotdResponse::Success { votd }) => {
+            info!("Got daily verse: {} ({})", votd.display_ref, votd.version);
+            Some(votd)
+        }
+        Ok(VotdResponse::Error { error: e }) => {
+            error!(
+                "Daily verse API error (version={version}, code={}): {}",
+                e.code, e.message
             );
-            Some(r.votd)
+            None
         }
         Err(e) => {
-            error!("Daily verse JSON parse error: {e}");
+            error!("Daily verse JSON parse error: {e}; body: {body}");
             None
         }
     }

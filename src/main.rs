@@ -6,7 +6,6 @@ mod config;
 mod dailyverse;
 mod homeassistant;
 mod quotes;
-mod screen;
 mod snapcast;
 mod weather;
 mod widget;
@@ -17,7 +16,6 @@ fn main() {
     env_logger::init();
     let config = config::load_config();
     let widget_cycle_secs = config.widget_cycle_secs;
-    let use_cec = config.cec_standby_on_blank.unwrap_or(false);
 
     let dashboard = Dashboard::new().unwrap();
 
@@ -54,9 +52,6 @@ fn main() {
             if let Some(d) = weak_tab.upgrade() {
                 d.set_blanked(false);
             }
-            if use_cec {
-                screen::cec_on();
-            }
         }
         ctrl.advance(false);
         // Restart the cycle timer so the user gets a full interval after
@@ -66,8 +61,7 @@ fn main() {
         }
     });
 
-    // Toggle screen blanking on "b".  Optionally also sends a CEC standby /
-    // on command to the connected display.
+    // Toggle screen blanking on "b".
     let blanked_cb = Rc::clone(&blanked);
     let weak_cb = dashboard.as_weak();
     dashboard.on_blank_toggle(move || {
@@ -75,13 +69,6 @@ fn main() {
         blanked_cb.set(new_state);
         if let Some(d) = weak_cb.upgrade() {
             d.set_blanked(new_state);
-        }
-        if use_cec {
-            if new_state {
-                screen::cec_standby();
-            } else {
-                screen::cec_on();
-            }
         }
     });
 

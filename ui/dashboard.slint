@@ -42,12 +42,11 @@ export component Dashboard inherits Window {
     in property <string> weather-wind: "";
     in property <[ForecastEntry]> weather-forecasts;
 
-    in property <bool> blanked: false;
+    private property <bool> blanked: false;
 
     callback next-widget();
     callback activate-widget(/* id */ int);
     callback deactivate-widget();
-    callback blank-toggle();
     callback quit();
 
     background: black;
@@ -56,11 +55,12 @@ export component Dashboard inherits Window {
     focus-scope := FocusScope {
         key-pressed(event) => {
             if event.text == Key.Tab {
+                root.blanked = false;
                 root.next-widget();
                 return accept;
             }
             if event.text == "b" {
-                root.blank-toggle();
+                root.blanked = !root.blanked;
                 return accept;
             }
             if event.text == "q" {

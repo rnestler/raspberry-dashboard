@@ -1,4 +1,3 @@
-use std::cell::Cell;
 use std::rc::Rc;
 
 mod clock;
@@ -36,39 +35,16 @@ fn main() {
     // TAB callback (to restart it on manual switch).
     let cycle_timer = Rc::new(slint::Timer::default());
 
-    // Tracks whether the screen is currently blanked (toggled by "b").
-    let blanked = Rc::new(Cell::new(false));
-
     // Widget switching via TAB — cycles through ALL enabled widgets
-    // (including inactive ones).  Also restarts the auto-cycle timer and
-    // unblanks the screen if it was blanked.
+    // (including inactive ones).  Also restarts the auto-cycle timer.
     let cycle_timer_tab = Rc::clone(&cycle_timer);
     let ctrl = Rc::clone(&controller);
-    let blanked_tab = Rc::clone(&blanked);
-    let weak_tab = dashboard.as_weak();
     dashboard.on_next_widget(move || {
-        if blanked_tab.get() {
-            blanked_tab.set(false);
-            if let Some(d) = weak_tab.upgrade() {
-                d.set_blanked(false);
-            }
-        }
         ctrl.advance(false);
         // Restart the cycle timer so the user gets a full interval after
         // a manual switch.
         if cycle_timer_tab.running() {
             cycle_timer_tab.restart();
-        }
-    });
-
-    // Toggle screen blanking on "b".
-    let blanked_cb = Rc::clone(&blanked);
-    let weak_cb = dashboard.as_weak();
-    dashboard.on_blank_toggle(move || {
-        let new_state = !blanked_cb.get();
-        blanked_cb.set(new_state);
-        if let Some(d) = weak_cb.upgrade() {
-            d.set_blanked(new_state);
         }
     });
 

@@ -1,4 +1,5 @@
 use std::cell::Cell;
+use std::collections::HashMap;
 
 use chrono::{Local, Locale};
 
@@ -27,6 +28,10 @@ fn detect_locale() -> Locale {
 pub trait Widget {
     /// Slint `current-widget` ID for this widget.
     fn id(&self) -> i32;
+
+    /// Stable, lower-case identifier used by the remote-control HTTP API
+    /// (e.g. `POST /widget/clock`).
+    fn name(&self) -> &'static str;
 
     /// Called once at startup on the **main thread**.
     ///
@@ -111,6 +116,18 @@ impl WidgetController {
         if let Some(pos) = self.widgets.iter().position(|w| w.id() == id) {
             self.show(pos);
         }
+    }
+
+    /// Snapshot of `name → id` for every enabled widget.
+    ///
+    /// Used by the remote-control HTTP server to translate the widget
+    /// name in `POST /widget/<name>` into the numeric id consumed by the
+    /// `activate-widget` Slint callback.
+    pub fn widget_name_map(&self) -> HashMap<String, i32> {
+        self.widgets
+            .iter()
+            .map(|w| (w.name().to_string(), w.id()))
+            .collect()
     }
 
     /// Advance to the next widget, wrapping around.

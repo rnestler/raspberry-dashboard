@@ -9,8 +9,18 @@ pub struct Config {
     pub daily_verse: Option<DailyVerseConfig>,
     pub quotes: Option<QuotesConfig>,
     pub weather: Option<WeatherConfig>,
+    pub remote_control: Option<RemoteControlConfig>,
     /// Automatically advance to the next enabled widget every N seconds.
     pub widget_cycle_secs: Option<u64>,
+}
+
+#[derive(Debug, Deserialize)]
+pub struct RemoteControlConfig {
+    /// Address to bind the HTTP server, e.g. "0.0.0.0:8765".
+    pub listen: SocketAddr,
+    /// Optional shared bearer token; if set, requests must include
+    /// `Authorization: Bearer <token>`.
+    pub token: Option<String>,
 }
 
 #[derive(Debug, Deserialize)]

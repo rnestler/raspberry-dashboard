@@ -27,6 +27,10 @@ impl Widget for QuotesWidget {
         WIDGET_ID
     }
 
+    fn name(&self) -> &'static str {
+        "quotes"
+    }
+
     fn init(&mut self, dashboard: &crate::Dashboard) {
         set_random_quote(&self.items, dashboard);
     }

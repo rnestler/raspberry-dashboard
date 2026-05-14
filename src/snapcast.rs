@@ -39,6 +39,10 @@ impl Widget for SnapcastWidget {
         WIDGET_ID
     }
 
+    fn name(&self) -> &'static str {
+        "snapcast"
+    }
+
     fn init(&mut self, dashboard: &crate::Dashboard) {
         let ui_handle = dashboard.as_weak();
         let addr = self.config.host;

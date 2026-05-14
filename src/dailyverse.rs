@@ -54,10 +54,11 @@ async fn try_fetch(client: &reqwest::Client, url: &str) -> Result<VotdData, Stri
         .await
         .map_err(|e| format!("reading body (status {status}): {e}"))?;
     if !status.is_success() {
-        return Err(format!("status {status}: {body}"));
+        let truncated = body.chars().take(128).collect::<String>();
+        return Err(format!("status {status}: {truncated}"));
     }
     match serde_json::from_str::<VotdResponse>(&body)
-        .map_err(|e| format!("JSON parse error: {e}; body: {body}"))?
+        .map_err(|e| format!("JSON parse error: {e}; body: {}", body.chars().take(128).collect::<String>()))?
     {
         VotdResponse::Success { votd } => Ok(votd),
         VotdResponse::Error { error: e } => {

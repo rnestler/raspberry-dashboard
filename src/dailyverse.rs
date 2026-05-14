@@ -34,44 +34,34 @@ struct VotdError {
 async fn fetch_verse(client: &reqwest::Client, version: &str) -> Option<VotdData> {
     let url = format!("{BIBLEGATEWAY_VOTD_URL}?format=json&version={version}");
     info!("Fetching daily verse from {url}");
-
-    let response = match client.get(&url).send().await {
-        Ok(r) => r,
-        Err(e) => {
-            error!("Daily verse fetch error: {e}");
-            return None;
-        }
-    };
-
-    let status = response.status();
-    let body = match response.text().await {
-        Ok(b) => b,
-        Err(e) => {
-            error!("Daily verse fetch: failed to read body (status {status}): {e}");
-            return None;
-        }
-    };
-
-    if !status.is_success() {
-        error!("Daily verse fetch returned status {status}: {body}");
-        return None;
-    }
-
-    match serde_json::from_str::<VotdResponse>(&body) {
-        Ok(VotdResponse::Success { votd }) => {
+    match try_fetch(client, &url).await {
+        Ok(votd) => {
             info!("Got daily verse: {} ({})", votd.display_ref, votd.version);
             Some(votd)
         }
-        Ok(VotdResponse::Error { error: e }) => {
-            error!(
-                "Daily verse API error (version={version}, code={}): {}",
-                e.code, e.message
-            );
+        Err(e) => {
+            error!("Daily verse fetch failed (version={version}): {e}");
             None
         }
-        Err(e) => {
-            error!("Daily verse JSON parse error: {e}; body: {body}");
-            None
+    }
+}
+
+async fn try_fetch(client: &reqwest::Client, url: &str) -> Result<VotdData, String> {
+    let response = client.get(url).send().await.map_err(|e| e.to_string())?;
+    let status = response.status();
+    let body = response
+        .text()
+        .await
+        .map_err(|e| format!("reading body (status {status}): {e}"))?;
+    if !status.is_success() {
+        return Err(format!("status {status}: {body}"));
+    }
+    match serde_json::from_str::<VotdResponse>(&body)
+        .map_err(|e| format!("JSON parse error: {e}; body: {body}"))?
+    {
+        VotdResponse::Success { votd } => Ok(votd),
+        VotdResponse::Error { error: e } => {
+            Err(format!("API error code={}: {}", e.code, e.message))
         }
     }
 }
@@ -160,33 +150,35 @@ async fn run_daily_verse_client(
     let client = reqwest::Client::new();
 
     loop {
-        let mut got_verse = None;
-        for version in &versions {
-            if let Some(votd) = fetch_verse(&client, version).await {
-                got_verse = Some(votd);
-                break;
-            }
-        }
-
-        match got_verse {
+        let sleep_secs = match fetch_first(&client, &versions).await {
             Some(votd) => {
-                let text = decode_html(&votd.text);
-                let reference = decode_html(&votd.display_ref);
-                let ver = decode_html(&votd.version);
-
-                push_to_ui(&ui_handle, text.into(), reference.into(), ver.into());
-
-                let sleep_secs = secs_until_midnight();
-                info!("Daily verse: sleeping {sleep_secs}s until midnight");
-                tokio::time::sleep(std::time::Duration::from_secs(sleep_secs)).await;
+                push_to_ui(
+                    &ui_handle,
+                    decode_html(&votd.text).into(),
+                    decode_html(&votd.display_ref).into(),
+                    decode_html(&votd.version).into(),
+                );
+                let s = secs_until_midnight();
+                info!("Daily verse: sleeping {s}s until midnight");
+                s
             }
             None => {
                 warn!(
                     "Daily verse: all {} version(s) failed, retrying in {RETRY_SECS}s",
                     versions.len()
                 );
-                tokio::time::sleep(std::time::Duration::from_secs(RETRY_SECS)).await;
+                RETRY_SECS
             }
+        };
+        tokio::time::sleep(std::time::Duration::from_secs(sleep_secs)).await;
+    }
+}
+
+async fn fetch_first(client: &reqwest::Client, versions: &[String]) -> Option<VotdData> {
+    for v in versions {
+        if let Some(votd) = fetch_verse(client, v).await {
+            return Some(votd);
         }
     }
+    None
 }

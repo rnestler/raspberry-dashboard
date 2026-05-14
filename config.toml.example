@@ -84,6 +84,33 @@ min = 15.0
 max = 30.0
 thresholds = [18.0, 21.0, 25.0]
 
+# Remote-control HTTP server. When present, the dashboard listens on the
+# given address for POST requests from Home Assistant (or anything else).
+# Endpoints:
+#   POST /widget/<name>      switch to a widget (clock, weather, snapcast,
+#                            homeassistant, dailyverse, quotes)
+#   POST /blank/on           blank the screen
+#   POST /blank/off          unblank the screen
+#   POST /blank/toggle       toggle blank state
+# If `token` is set, every request must include
+#   Authorization: Bearer <token>
+#
+# Example Home Assistant rest_command:
+#   rest_command:
+#     dashboard_widget:
+#       url: "http://dashboard.local:8765/widget/{{ widget }}"
+#       method: POST
+#       headers:
+#         Authorization: "Bearer secret"
+#     dashboard_blank:
+#       url: "http://dashboard.local:8765/blank/{{ action }}"
+#       method: POST
+#       headers:
+#         Authorization: "Bearer secret"
+# [remote_control]
+# listen = "0.0.0.0:8765"
+# token = "secret"
+
 # Weather widget: displays current conditions and a multi-day forecast
 # from a Home Assistant weather entity.
 # Only active (and included in the cycle) when this section is present.

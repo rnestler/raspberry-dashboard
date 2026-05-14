@@ -42,7 +42,7 @@ export component Dashboard inherits Window {
     in property <string> weather-wind: "";
     in property <[ForecastEntry]> weather-forecasts;
 
-    private property <bool> blanked: false;
+    in-out property <bool> blanked: false;
 
     callback next-widget();
     callback activate-widget(/* id */ int);

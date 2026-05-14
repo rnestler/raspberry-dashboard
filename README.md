@@ -42,6 +42,7 @@ Key sections:
 - `[daily_verse]` — enables the Daily Verse widget; optionally set `versions` to an ordered list of BibleGateway translations (e.g. `["NGU-DE", "SCH2000"]`); the widget uses the first one that returns a verse (default: `["NGU-DE", "SCH2000"]`)
 - `[[quotes.items]]` — list of quotes for the Quotes widget; each entry has a `text` and an optional `source`
 - `[weather]` — Home Assistant weather entity URL, entity ID, poll interval, forecast days (default: 5), and forecast type (`"daily"`, `"hourly"`, or `"twice_daily"`); requires `HOMEASSISTANT_TOKEN`
+- `[remote_control]` — enables an HTTP server (`listen` address, optional `token`) so Home Assistant (or anything else) can switch widgets and blank/unblank the screen via `POST /widget/<name>` and `POST /blank/{on,off,toggle}`. See [config.toml.example](config.toml.example) for matching HA `rest_command` YAML
 
 ## Deployment
 

@@ -5,6 +5,7 @@ mod config;
 mod dailyverse;
 mod homeassistant;
 mod quotes;
+mod remote;
 mod snapcast;
 mod weather;
 mod widget;
@@ -13,8 +14,9 @@ slint::include_modules!();
 
 fn main() {
     env_logger::init();
-    let config = config::load_config();
+    let mut config = config::load_config();
     let widget_cycle_secs = config.widget_cycle_secs;
+    let remote_control_config = config.remote_control.take();
 
     let dashboard = Dashboard::new().unwrap();
 
@@ -27,6 +29,12 @@ fn main() {
     // Set initial widget and initialise every widget (main-thread setup +
     // background thread spawning).
     controller.init_all();
+
+    // Spawn the remote-control HTTP server if configured.
+    if let Some(rc_config) = remote_control_config {
+        let map = controller.widget_name_map();
+        remote::spawn(rc_config, map, dashboard.as_weak());
+    }
 
     // Wrap in Rc for sharing with closures.
     let controller = Rc::new(controller);

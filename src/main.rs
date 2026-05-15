@@ -30,10 +30,17 @@ fn main() {
     // background thread spawning).
     controller.init_all();
 
-    // Spawn the remote-control HTTP server if configured.
+    // Spawn the remote-control HTTP server if configured.  A token is
+    // required: without it any LAN host could drive the dashboard.
     if let Some(rc_config) = remote_control_config {
-        let map = controller.widget_name_map();
-        remote::spawn(rc_config, map, dashboard.as_weak());
+        if let Some(token) = config::remote_control_token() {
+            let map = controller.widget_name_map();
+            remote::spawn(rc_config, token, map, dashboard.as_weak());
+        } else {
+            log::warn!(
+                "Remote control config present but DASHBOARD_REMOTE_TOKEN not set – skipping"
+            );
+        }
     }
 
     // Wrap in Rc for sharing with closures.

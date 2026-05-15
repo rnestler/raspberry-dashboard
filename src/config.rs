@@ -18,9 +18,15 @@ pub struct Config {
 pub struct RemoteControlConfig {
     /// Address to bind the HTTP server, e.g. "0.0.0.0:8765".
     pub listen: SocketAddr,
-    /// Optional shared bearer token; if set, requests must include
-    /// `Authorization: Bearer <token>`.
-    pub token: Option<String>,
+}
+
+/// Read the remote-control shared bearer token from the
+/// `DASHBOARD_REMOTE_TOKEN` environment variable.  Required to enable
+/// the remote-control HTTP server; without it the `[remote_control]`
+/// section is ignored.  Every request must include
+/// `Authorization: Bearer <token>`.
+pub fn remote_control_token() -> Option<String> {
+    std::env::var("DASHBOARD_REMOTE_TOKEN").ok()
 }
 
 #[derive(Debug, Deserialize)]

@@ -92,8 +92,9 @@ thresholds = [18.0, 21.0, 25.0]
 #   POST /blank/on           blank the screen
 #   POST /blank/off          unblank the screen
 #   POST /blank/toggle       toggle blank state
-# If `token` is set, every request must include
-#   Authorization: Bearer <token>
+# Requires the DASHBOARD_REMOTE_TOKEN environment variable to be set —
+# without it this section is ignored.  Every request must include
+# `Authorization: Bearer <token>`.
 #
 # Example Home Assistant rest_command:
 #   rest_command:
@@ -109,7 +110,6 @@ thresholds = [18.0, 21.0, 25.0]
 #         Authorization: "Bearer secret"
 # [remote_control]
 # listen = "0.0.0.0:8765"
-# token = "secret"
 
 # Weather widget: displays current conditions and a multi-day forecast
 # from a Home Assistant weather entity.

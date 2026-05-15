@@ -11,6 +11,7 @@ Group=alarm
 SupplementaryGroups=input video
 Environment=DASHBOARD_CONFIG=/home/alarm/config.toml
 Environment=HOMEASSISTANT_TOKEN=your_homeassistant_token
+Environment=DASHBOARD_REMOTE_TOKEN=token_for_remote_access
 ExecStart=/home/alarm/raspberry-dashboard
 Restart=on-failure
 RestartSec=5

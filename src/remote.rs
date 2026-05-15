@@ -24,18 +24,19 @@ use crate::config::RemoteControlConfig;
 #[derive(Clone)]
 struct AppState {
     name_to_id: Arc<HashMap<String, i32>>,
-    token: Option<Arc<String>>,
+    token: Arc<String>,
     dashboard: slint::Weak<crate::Dashboard>,
 }
 
 pub fn spawn(
     config: RemoteControlConfig,
+    token: String,
     name_to_id: HashMap<String, i32>,
     dashboard: slint::Weak<crate::Dashboard>,
 ) {
     let state = AppState {
         name_to_id: Arc::new(name_to_id),
-        token: config.token.map(Arc::new),
+        token: Arc::new(token),
         dashboard,
     };
     let listen = config.listen;
@@ -63,17 +64,14 @@ pub fn spawn(
     });
 }
 
-/// Returns `Err(401)` if a token is configured and the request's
-/// `Authorization` header does not match `Bearer <token>`.
+/// Returns `Err(401)` if the request's `Authorization` header does not
+/// match `Bearer <token>`.
 fn check_auth(state: &AppState, headers: &HeaderMap) -> Result<(), StatusCode> {
-    let Some(expected) = state.token.as_deref() else {
-        return Ok(());
-    };
     let provided = headers
         .get(axum::http::header::AUTHORIZATION)
         .and_then(|v| v.to_str().ok())
         .and_then(|v| v.strip_prefix("Bearer "));
-    if provided == Some(expected.as_str()) {
+    if provided == Some(state.token.as_str()) {
         Ok(())
     } else {
         warn!("Remote control: rejected request with missing/bad bearer token");

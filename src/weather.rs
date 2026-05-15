@@ -31,6 +31,10 @@ impl Widget for WeatherWidget {
         WIDGET_ID
     }
 
+    fn name(&self) -> &'static str {
+        "weather"
+    }
+
     fn init(&mut self, dashboard: &crate::Dashboard) {
         let ui_handle = dashboard.as_weak();
         let config = self

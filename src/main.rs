@@ -5,6 +5,7 @@ mod config;
 mod dailyverse;
 mod homeassistant;
 mod quotes;
+mod remote;
 mod snapcast;
 mod weather;
 mod widget;

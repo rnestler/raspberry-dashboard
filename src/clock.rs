@@ -28,6 +28,10 @@ impl Widget for ClockWidget {
         WIDGET_ID
     }
 
+    fn name(&self) -> &'static str {
+        "clock"
+    }
+
     fn init(&mut self, dashboard: &crate::Dashboard) {
         let weak = dashboard.as_weak();
         let timer = slint::Timer::default();

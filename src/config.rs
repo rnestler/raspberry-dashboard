@@ -9,8 +9,24 @@ pub struct Config {
     pub daily_verse: Option<DailyVerseConfig>,
     pub quotes: Option<QuotesConfig>,
     pub weather: Option<WeatherConfig>,
+    pub remote_control: Option<RemoteControlConfig>,
     /// Automatically advance to the next enabled widget every N seconds.
     pub widget_cycle_secs: Option<u64>,
+}
+
+#[derive(Debug, Deserialize)]
+pub struct RemoteControlConfig {
+    /// Address to bind the HTTP server, e.g. "0.0.0.0:8765".
+    pub listen: SocketAddr,
+}
+
+/// Read the remote-control shared bearer token from the
+/// `DASHBOARD_REMOTE_TOKEN` environment variable.  Required to enable
+/// the remote-control HTTP server; without it the `[remote_control]`
+/// section is ignored.  Every request must include
+/// `Authorization: Bearer <token>`.
+pub fn remote_control_token() -> Option<String> {
+    std::env::var("DASHBOARD_REMOTE_TOKEN").ok()
 }
 
 #[derive(Debug, Deserialize)]

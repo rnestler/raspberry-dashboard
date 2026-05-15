@@ -28,6 +28,10 @@ struct AppState {
     dashboard: slint::Weak<crate::Dashboard>,
 }
 
+/// Spawn the remote-control HTTP server.  The caller is responsible for
+/// resolving the bearer token (typically via
+/// [`crate::config::remote_control_token`]); the controller wires this
+/// up in [`crate::widget::WidgetController::spawn_remote_control`].
 pub fn spawn(
     config: RemoteControlConfig,
     token: String,

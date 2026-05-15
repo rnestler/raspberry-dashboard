@@ -3,7 +3,7 @@ use std::collections::HashMap;
 
 use chrono::{Local, Locale};
 
-use crate::config::Config;
+use crate::config::{Config, RemoteControlConfig};
 
 /// Detect the user's locale from the usual POSIX environment variables.
 ///
@@ -123,11 +123,33 @@ impl WidgetController {
     /// Used by the remote-control HTTP server to translate the widget
     /// name in `POST /widget/<name>` into the numeric id consumed by the
     /// `activate-widget` Slint callback.
-    pub fn widget_name_map(&self) -> HashMap<String, i32> {
+    fn widget_name_map(&self) -> HashMap<String, i32> {
         self.widgets
             .iter()
             .map(|w| (w.name().to_string(), w.id()))
             .collect()
+    }
+
+    /// Spawn the remote-control HTTP server if `config` is `Some` and
+    /// `DASHBOARD_REMOTE_TOKEN` is set.  A token is required: without
+    /// it any LAN host could drive the dashboard, so the section is
+    /// skipped with a warning when the env var is missing.
+    fn spawn_remote_control(&self, config: Option<RemoteControlConfig>) {
+        let Some(config) = config else {
+            return;
+        };
+        let Some(token) = crate::config::remote_control_token() else {
+            log::warn!(
+                "Remote control config present but DASHBOARD_REMOTE_TOKEN not set – skipping"
+            );
+            return;
+        };
+        crate::remote::spawn(
+            config,
+            token,
+            self.widget_name_map(),
+            self.dashboard.clone(),
+        );
     }
 
     /// Advance to the next widget, wrapping around.
@@ -215,10 +237,12 @@ pub fn create_widgets(
         }
     }
 
-    WidgetController {
+    let controller = WidgetController {
         widgets,
         current: Cell::new(0),
         locale: detect_locale(),
         dashboard,
-    }
+    };
+    controller.spawn_remote_control(config.remote_control);
+    controller
 }

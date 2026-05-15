@@ -11,9 +11,14 @@ host = "127.0.0.1:1705"
 # Daily verse widget: fetches a verse of the day from BibleGateway once per day.
 # Only active (and included in the cycle) when this section is present.
 [daily_verse]
-# BibleGateway translation ID. Defaults to NGU-DE (Neue Genfer Übersetzung).
-# Other German options: LUTH1912, HFA, SLT, ELB
-# version = "NGU-DE"
+# Ordered list of BibleGateway translation IDs. The widget tries each in
+# turn and uses the first that returns a verse — useful when the preferred
+# translation doesn't cover every book of the bible (e.g. NGU-DE omits
+# some books). Defaults to ["NGU-DE", "SCH2000"] if omitted.
+# German versions on BibleGateway: NGU-DE (Neue Genfer Übersetzung),
+# SCH2000 (Schlachter 2000), SCH1951 (Schlachter 1951), LUTH1545 (Luther 1545),
+# HOF (Hoffnung für Alle).
+# versions = ["NGU-DE", "SCH2000"]
 
 # Quotes widget: displays a random quote each time the widget is shown.
 # Only active (and included in the cycle) when this section is present.

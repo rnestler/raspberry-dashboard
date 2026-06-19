@@ -146,13 +146,8 @@ enum BlankOp {
     Toggle,
 }
 
-#[derive(Serialize)]
+#[derive(Deserialize, Serialize)]
 struct BlankStatus {
-    blanked: bool,
-}
-
-#[derive(Deserialize)]
-struct BlankSet {
     blanked: bool,
 }
 
@@ -174,7 +169,7 @@ async fn get_blank(
 async fn set_blank_body(
     State(state): State<AppState>,
     headers: HeaderMap,
-    Json(body): Json<BlankSet>,
+    Json(body): Json<BlankStatus>,
 ) -> Result<&'static str, StatusCode> {
     check_auth(&state, &headers)?;
     info!("Remote control: blank set blanked={}", body.blanked);

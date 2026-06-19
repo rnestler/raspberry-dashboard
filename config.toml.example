@@ -92,11 +92,16 @@ thresholds = [18.0, 21.0, 25.0]
 #   POST /blank/on           blank the screen
 #   POST /blank/off          unblank the screen
 #   POST /blank/toggle       toggle blank state
+#   POST /blank              body {"blanked": true|false} — explicit set
+#                            (used by HA's switch.rest body_on/body_off)
+#   GET  /blank              -> {"blanked": bool} — current state
+#                            (used by HA's switch.rest polling)
 # Requires the DASHBOARD_REMOTE_TOKEN environment variable to be set —
 # without it this section is ignored.  Every request must include
 # `Authorization: Bearer <token>`.
 #
-# Example Home Assistant rest_command:
+# Example Home Assistant rest_command (per-action endpoints, handy for
+# toggle / button cards):
 #   rest_command:
 #     dashboard_widget:
 #       url: "http://dashboard.local:8765/widget/{{ widget }}"
@@ -108,6 +113,23 @@ thresholds = [18.0, 21.0, 25.0]
 #       method: POST
 #       headers:
 #         Authorization: "Bearer secret"
+#
+# Example Home Assistant switch.rest — surfaces the blank state as a
+# real switch.dashboard_blank entity whose state reflects the actual
+# screen (including local "b" key toggles):
+#   switch:
+#     - platform: rest
+#       name: Dashboard blank
+#       resource: http://dashboard.local:8765/blank
+#       method: post
+#       body_on: '{"blanked": true}'
+#       body_off: '{"blanked": false}'
+#       is_on_template: "{{ value_json.blanked }}"
+#       headers:
+#         Authorization: "Bearer secret"
+#         Content-Type: application/json
+#       scan_interval: 5
+#
 # [remote_control]
 # listen = "0.0.0.0:8765"
 

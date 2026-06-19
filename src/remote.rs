@@ -6,9 +6,12 @@
 //! - `POST /blank/on`  — blank the screen
 //! - `POST /blank/off` — unblank the screen
 //! - `POST /blank/toggle` — toggle the blank state
+//! - `POST /blank` with body `{"blanked": bool}` — explicit set (used by
+//!   Home Assistant's `switch.rest` platform via `body_on`/`body_off`)
+//! - `GET  /blank` → `{"blanked": bool}` — current state (used by
+//!   Home Assistant's `switch.rest` polling)
 //!
-//! When `token` is configured every request must carry
-//! `Authorization: Bearer <token>`; otherwise auth is skipped.
+//! Every request must carry `Authorization: Bearer <token>`.
 
 use std::collections::HashMap;
 use std::sync::Arc;
@@ -16,8 +19,11 @@ use std::sync::Arc;
 use axum::Router;
 use axum::extract::{Path, State};
 use axum::http::{HeaderMap, StatusCode};
-use axum::routing::post;
+use axum::response::Json;
+use axum::routing::{get, post};
 use log::{error, info, warn};
+use serde::{Deserialize, Serialize};
+use tokio::sync::oneshot;
 
 use crate::config::RemoteControlConfig;
 
@@ -50,6 +56,7 @@ pub fn spawn(
         rt.block_on(async move {
             let app = Router::new()
                 .route("/widget/:name", post(switch_widget))
+                .route("/blank", get(get_blank).post(set_blank_body))
                 .route("/blank/:action", post(set_blank))
                 .with_state(state);
 
@@ -137,4 +144,45 @@ enum BlankOp {
     On,
     Off,
     Toggle,
+}
+
+#[derive(Serialize)]
+struct BlankStatus {
+    blanked: bool,
+}
+
+#[derive(Deserialize)]
+struct BlankSet {
+    blanked: bool,
+}
+
+async fn get_blank(
+    State(state): State<AppState>,
+    headers: HeaderMap,
+) -> Result<Json<BlankStatus>, StatusCode> {
+    check_auth(&state, &headers)?;
+    let (tx, rx) = oneshot::channel();
+    let handle = state.dashboard.clone();
+    let _ = slint::invoke_from_event_loop(move || {
+        let value = handle.upgrade().map(|d| d.get_blanked()).unwrap_or(false);
+        let _ = tx.send(value);
+    });
+    let blanked = rx.await.unwrap_or(false);
+    Ok(Json(BlankStatus { blanked }))
+}
+
+async fn set_blank_body(
+    State(state): State<AppState>,
+    headers: HeaderMap,
+    Json(body): Json<BlankSet>,
+) -> Result<&'static str, StatusCode> {
+    check_auth(&state, &headers)?;
+    info!("Remote control: blank set blanked={}", body.blanked);
+    let handle = state.dashboard.clone();
+    let _ = slint::invoke_from_event_loop(move || {
+        if let Some(dashboard) = handle.upgrade() {
+            dashboard.set_blanked(body.blanked);
+        }
+    });
+    Ok("ok")
 }

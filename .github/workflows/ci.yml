@@ -10,7 +10,7 @@ jobs:
     runs-on: ubuntu-24.04-arm
     container: rnestler/archlinuxarm-rust:1.94.0
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
       - run: pacman -Sy --noconfirm fontconfig libxkbcommon libinput mesa
       - uses: actions/cache@v5
         with:
@@ -32,7 +32,7 @@ jobs:
     runs-on: ubuntu-24.04
     container: rnestler/archlinux-rust:1.94.0
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
       - run: pacman -Sy --noconfirm fontconfig
       - uses: actions/cache@v5
         with:
@@ -54,6 +54,6 @@ jobs:
     runs-on: ubuntu-24.04
     container: rnestler/archlinux-rust:1.94.0
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
       - run: rustup component add rustfmt
       - run: cargo fmt -- --check

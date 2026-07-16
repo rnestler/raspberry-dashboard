@@ -125,6 +125,10 @@ impl Widget for DailyVerseWidget {
         WIDGET_ID
     }
 
+    fn name(&self) -> &'static str {
+        "dailyverse"
+    }
+
     fn init(&mut self, dashboard: &crate::Dashboard) {
         let ui_handle = dashboard.as_weak();
         let config = self

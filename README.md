@@ -30,6 +30,7 @@ cross build --target aarch64-unknown-linux-gnu --no-default-features --features 
 
 - `DASHBOARD_CONFIG` — Path to config file (default: `config.toml`)
 - `HOMEASSISTANT_TOKEN` — Home Assistant long-lived access token (required for the Home Assistant and Weather widgets)
+- `DASHBOARD_REMOTE_TOKEN` — Shared bearer token required to enable the `[remote_control]` HTTP server; every request must include `Authorization: Bearer <token>`
 
 ### Config file
 
@@ -42,6 +43,7 @@ Key sections:
 - `[daily_verse]` — enables the Daily Verse widget; optionally set `versions` to an ordered list of BibleGateway translations (e.g. `["NGU-DE", "SCH2000"]`); the widget uses the first one that returns a verse (default: `["NGU-DE", "SCH2000"]`)
 - `[[quotes.items]]` — list of quotes for the Quotes widget; each entry has a `text` and an optional `source`
 - `[weather]` — Home Assistant weather entity URL, entity ID, poll interval, forecast days (default: 5), and forecast type (`"daily"`, `"hourly"`, or `"twice_daily"`); requires `HOMEASSISTANT_TOKEN`
+- `[remote_control]` — enables an HTTP server (`listen` address) so Home Assistant (or anything else) can switch widgets and blank/unblank the screen. Endpoints: `POST /widget/<name>`, `POST /blank/{on,off,toggle}`, plus `GET /blank` and `POST /blank` with body `{"blanked": bool}` for use with HA's `switch.rest` platform (surfaces the blank state as a real switch entity). Requires `DASHBOARD_REMOTE_TOKEN` to be set (the section is ignored otherwise). See [config.toml.example](config.toml.example) for matching HA YAML
 
 ## Deployment
 

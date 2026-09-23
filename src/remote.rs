@@ -181,3 +181,57 @@ async fn set_blank_body(
     });
     Ok("ok")
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use axum::http::HeaderMap;
+
+    fn test_state(token: &str) -> AppState {
+        AppState {
+            name_to_id: Arc::new(HashMap::new()),
+            token: Arc::new(token.to_string()),
+            dashboard: slint::Weak::default(),
+        }
+    }
+
+    #[test]
+    fn check_auth_valid_token() {
+        let state = test_state("secret");
+        let mut headers = HeaderMap::new();
+        headers.insert(
+            axum::http::header::AUTHORIZATION,
+            "Bearer secret".parse().unwrap(),
+        );
+        assert!(check_auth(&state, &headers).is_ok());
+    }
+
+    #[test]
+    fn check_auth_invalid_token() {
+        let state = test_state("secret");
+        let mut headers = HeaderMap::new();
+        headers.insert(
+            axum::http::header::AUTHORIZATION,
+            "Bearer wrong".parse().unwrap(),
+        );
+        assert_eq!(check_auth(&state, &headers), Err(StatusCode::UNAUTHORIZED));
+    }
+
+    #[test]
+    fn check_auth_missing_header() {
+        let state = test_state("secret");
+        let headers = HeaderMap::new();
+        assert_eq!(check_auth(&state, &headers), Err(StatusCode::UNAUTHORIZED));
+    }
+
+    #[test]
+    fn check_auth_wrong_scheme() {
+        let state = test_state("secret");
+        let mut headers = HeaderMap::new();
+        headers.insert(
+            axum::http::header::AUTHORIZATION,
+            "Basic dXNlcjpwYXNz".parse().unwrap(),
+        );
+        assert_eq!(check_auth(&state, &headers), Err(StatusCode::UNAUTHORIZED));
+    }
+}

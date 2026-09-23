@@ -187,3 +187,37 @@ async fn fetch_first(client: &reqwest::Client, versions: &[String]) -> Option<Vo
     }
     None
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn decode_html_basic_entities() {
+        assert_eq!(decode_html("Hello &amp; World"), "Hello & World");
+        assert_eq!(decode_html("&lt;tag&gt;"), "<tag>");
+        assert_eq!(decode_html("&quot;text&quot;"), "\"text\"");
+    }
+
+    #[test]
+    fn decode_html_no_entities() {
+        assert_eq!(decode_html("Plain text"), "Plain text");
+    }
+
+    #[test]
+    fn decode_html_numeric_entity() {
+        assert_eq!(decode_html("&#39;quote&#39;"), "'quote'");
+    }
+
+    #[test]
+    fn secs_until_midnight_is_in_range() {
+        let secs = secs_until_midnight();
+        // Must be at least the minimum 60s
+        assert!(secs >= 60, "secs_until_midnight={secs} should be >= 60");
+        // Can't be more than a full day (86400s)
+        assert!(
+            secs <= 86400,
+            "secs_until_midnight={secs} should be <= 86400"
+        );
+    }
+}

@@ -246,3 +246,65 @@ pub fn create_widgets(
     controller.spawn_remote_control(config.remote_control);
     controller
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    impl WidgetController {
+        fn for_test(widgets: Vec<Box<dyn Widget>>) -> Self {
+            Self {
+                widgets,
+                current: Cell::new(0),
+                locale: Locale::POSIX,
+                dashboard: slint::Weak::default(),
+            }
+        }
+    }
+
+    struct TestWidget {
+        widget_id: i32,
+        widget_name: &'static str,
+    }
+
+    impl Widget for TestWidget {
+        fn id(&self) -> i32 {
+            self.widget_id
+        }
+        fn name(&self) -> &'static str {
+            self.widget_name
+        }
+        fn init(&mut self, _dashboard: &crate::Dashboard) {}
+    }
+
+    #[test]
+    fn widget_name_map_builds_correctly() {
+        let widgets: Vec<Box<dyn Widget>> = vec![
+            Box::new(TestWidget {
+                widget_id: 0,
+                widget_name: "homeassistant",
+            }),
+            Box::new(TestWidget {
+                widget_id: 1,
+                widget_name: "nowplaying",
+            }),
+            Box::new(TestWidget {
+                widget_id: 2,
+                widget_name: "clock",
+            }),
+        ];
+        let controller = WidgetController::for_test(widgets);
+        let map = controller.widget_name_map();
+        assert_eq!(map.get("homeassistant"), Some(&0));
+        assert_eq!(map.get("nowplaying"), Some(&1));
+        assert_eq!(map.get("clock"), Some(&2));
+        assert_eq!(map.len(), 3);
+    }
+
+    #[test]
+    fn widget_name_map_empty() {
+        let controller = WidgetController::for_test(vec![]);
+        let map = controller.widget_name_map();
+        assert!(map.is_empty());
+    }
+}

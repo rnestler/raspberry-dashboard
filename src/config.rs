@@ -103,3 +103,92 @@ pub fn load_config() -> Config {
     let contents = std::fs::read_to_string(path).expect("failed to read config file");
     toml::from_str(&contents).expect("failed to parse config file")
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn deserialize_full_config() {
+        let toml = r#"
+            widget_cycle_secs = 30
+
+            [snapcast]
+            host = "127.0.0.1:1704"
+
+            [homeassistant]
+            url = "http://homeassistant.local:8123"
+            poll_interval_secs = 60
+            sensors = [{ entity_id = "sensor.temp", label = "Temp" }]
+
+            [daily_verse]
+            versions = ["NGU-DE"]
+
+            [quotes]
+            items = [{ text = "Hello", source = "World" }]
+
+            [weather]
+            url = "http://ha:8123"
+            entity_id = "weather.home"
+            forecast_days = 3
+            forecast_type = "hourly"
+
+            [remote_control]
+            listen = "0.0.0.0:8765"
+        "#;
+        let cfg: Config = toml::from_str(toml).unwrap();
+        assert_eq!(cfg.widget_cycle_secs, Some(30));
+        assert!(cfg.snapcast.is_some());
+        assert_eq!(cfg.snapcast.unwrap().host.to_string(), "127.0.0.1:1704");
+        assert!(cfg.homeassistant.is_some());
+        assert!(cfg.daily_verse.is_some());
+        assert!(cfg.quotes.is_some());
+        assert!(cfg.weather.is_some());
+        assert_eq!(cfg.weather.unwrap().forecast_days, Some(3));
+        assert!(cfg.remote_control.is_some());
+    }
+
+    #[test]
+    fn deserialize_minimal_config() {
+        let toml = r#"
+            [quotes]
+            items = [{ text = "Minimal" }]
+        "#;
+        let cfg: Config = toml::from_str(toml).unwrap();
+        assert!(cfg.quotes.is_some());
+        assert!(cfg.snapcast.is_none());
+        assert!(cfg.homeassistant.is_none());
+        assert!(cfg.weather.is_none());
+        assert!(cfg.daily_verse.is_none());
+    }
+
+    #[test]
+    fn deserialize_sensor_with_gauge() {
+        let toml = r#"
+            entity_id = "sensor.battery"
+            label = "Battery"
+            sensor_type = "gauge"
+            min = 0.0
+            max = 100.0
+            thresholds = [20.0, 50.0, 80.0]
+        "#;
+        let sensor: SensorConfig = toml::from_str(toml).unwrap();
+        assert_eq!(sensor.entity_id, "sensor.battery");
+        assert_eq!(sensor.sensor_type, Some("gauge".to_string()));
+        assert_eq!(sensor.min, Some(0.0));
+        assert_eq!(sensor.max, Some(100.0));
+        assert_eq!(sensor.thresholds, Some(vec![20.0, 50.0, 80.0]));
+    }
+
+    #[test]
+    fn default_config_is_empty() {
+        let cfg = Config::default();
+        assert!(cfg.snapcast.is_none());
+        assert!(cfg.homeassistant.is_none());
+        assert!(cfg.daily_verse.is_none());
+        assert!(cfg.quotes.is_none());
+        assert!(cfg.weather.is_none());
+        assert!(cfg.remote_control.is_none());
+        assert!(cfg.widget_cycle_secs.is_none());
+    }
+}

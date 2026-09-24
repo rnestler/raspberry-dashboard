@@ -294,8 +294,64 @@ fn parse_day(datetime: &str) -> String {
         return dt.format("%a").to_string();
     }
     // Fallback: try parsing just the date portion.
-    if let Ok(date) = chrono::NaiveDate::parse_from_str(&datetime[..10], "%Y-%m-%d") {
+    if datetime.len() >= 10
+        && let Ok(date) = chrono::NaiveDate::parse_from_str(&datetime[..10], "%Y-%m-%d")
+    {
         return date.format("%a").to_string();
     }
     datetime[..3.min(datetime.len())].to_string()
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn condition_symbol_known() {
+        assert_eq!(condition_symbol("sunny"), "☀");
+        assert_eq!(condition_symbol("rainy"), "🌧");
+        assert_eq!(condition_symbol("snowy"), "❄");
+        assert_eq!(condition_symbol("fog"), "🌫");
+        assert_eq!(condition_symbol("lightning-rainy"), "⛈");
+    }
+
+    #[test]
+    fn condition_symbol_windy_variants() {
+        assert_eq!(condition_symbol("windy"), "💨");
+        assert_eq!(condition_symbol("windy-variant"), "💨");
+    }
+
+    #[test]
+    fn condition_symbol_unknown() {
+        assert_eq!(condition_symbol("alien_invasion"), "?");
+    }
+
+    #[test]
+    fn condition_label_known() {
+        assert_eq!(condition_label("sunny"), "Sonnig");
+        assert_eq!(condition_label("rainy"), "Regnerisch");
+    }
+
+    #[test]
+    fn condition_label_unknown() {
+        assert_eq!(condition_label("unknown"), "Unbekannt");
+    }
+
+    #[test]
+    fn parse_day_rfc3339() {
+        let day = parse_day("2024-03-15T12:00:00+01:00");
+        assert_eq!(day, "Fri");
+    }
+
+    #[test]
+    fn parse_day_date_only() {
+        let day = parse_day("2024-03-14");
+        assert_eq!(day, "Thu");
+    }
+
+    #[test]
+    fn parse_day_fallback_short_string() {
+        let day = parse_day("Monsoon");
+        assert_eq!(day, "Mon");
+    }
 }

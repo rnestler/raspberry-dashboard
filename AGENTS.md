@@ -14,11 +14,11 @@ cargo run                          # Build and run (locally)
 cargo build --release              # Release build (recommended for Pi deployment)
 ```
 
-Requires Rust edition 2024. No tests configured yet.
+Requires Rust edition 2024. Tests are inline in `#[cfg(test)]` blocks within source files.
 
 ```bash
 cargo fmt                          # Format code
-cargo clippy                       # Lint
+cargo clippy --all-targets --all-features -- -D warnings  # Lint
 ```
 
 ```bash

@@ -71,22 +71,24 @@ impl DashboardProxy for slint::Weak<crate::Dashboard> {
 }
 
 #[derive(Clone)]
-struct AppState {
+struct AppState<D> {
     name_to_id: Arc<HashMap<String, i32>>,
     token: Arc<String>,
-    dashboard: Arc<dyn DashboardProxy>,
+    dashboard: D,
 }
 
 /// Spawn the remote-control HTTP server.  The caller is responsible for
 /// resolving the bearer token (typically via
 /// [`crate::config::remote_control_token`]); the controller wires this
 /// up in [`crate::widget::WidgetController::spawn_remote_control`].
-pub fn spawn(
+pub fn spawn<D>(
     config: RemoteControlConfig,
     token: String,
     name_to_id: HashMap<String, i32>,
-    dashboard: Arc<dyn DashboardProxy>,
-) {
+    dashboard: D,
+) where
+    D: DashboardProxy + Clone + Send + Sync + 'static,
+{
     let state = AppState {
         name_to_id: Arc::new(name_to_id),
         token: Arc::new(token),
@@ -120,7 +122,7 @@ pub fn spawn(
 
 /// Returns `Err(401)` if the request's `Authorization` header does not
 /// match `Bearer <token>`.
-fn check_auth(state: &AppState, headers: &HeaderMap) -> Result<(), StatusCode> {
+fn check_auth<D>(state: &AppState<D>, headers: &HeaderMap) -> Result<(), StatusCode> {
     let provided = headers
         .get(axum::http::header::AUTHORIZATION)
         .and_then(|v| v.to_str().ok())
@@ -133,11 +135,14 @@ fn check_auth(state: &AppState, headers: &HeaderMap) -> Result<(), StatusCode> {
     }
 }
 
-async fn switch_widget(
-    State(state): State<AppState>,
+async fn switch_widget<D>(
+    State(state): State<AppState<D>>,
     headers: HeaderMap,
     Path(name): Path<String>,
-) -> Result<&'static str, StatusCode> {
+) -> Result<&'static str, StatusCode>
+where
+    D: DashboardProxy,
+{
     check_auth(&state, &headers)?;
     let Some(&id) = state.name_to_id.get(&name) else {
         warn!("Remote control: unknown widget '{name}'");
@@ -148,11 +153,14 @@ async fn switch_widget(
     Ok("ok")
 }
 
-async fn set_blank(
-    State(state): State<AppState>,
+async fn set_blank<D>(
+    State(state): State<AppState<D>>,
     headers: HeaderMap,
     Path(action): Path<String>,
-) -> Result<&'static str, StatusCode> {
+) -> Result<&'static str, StatusCode>
+where
+    D: DashboardProxy,
+{
     check_auth(&state, &headers)?;
     let value = match action.as_str() {
         "on" => true,
@@ -173,20 +181,26 @@ struct BlankStatus {
     blanked: bool,
 }
 
-async fn get_blank(
-    State(state): State<AppState>,
+async fn get_blank<D>(
+    State(state): State<AppState<D>>,
     headers: HeaderMap,
-) -> Result<Json<BlankStatus>, StatusCode> {
+) -> Result<Json<BlankStatus>, StatusCode>
+where
+    D: DashboardProxy,
+{
     check_auth(&state, &headers)?;
     let blanked = state.dashboard.get_blanked();
     Ok(Json(BlankStatus { blanked }))
 }
 
-async fn set_blank_body(
-    State(state): State<AppState>,
+async fn set_blank_body<D>(
+    State(state): State<AppState<D>>,
     headers: HeaderMap,
     Json(body): Json<BlankStatus>,
-) -> Result<&'static str, StatusCode> {
+) -> Result<&'static str, StatusCode>
+where
+    D: DashboardProxy,
+{
     check_auth(&state, &headers)?;
     info!("Remote control: blank set blanked={}", body.blanked);
     state.dashboard.set_blanked(body.blanked);
@@ -195,6 +209,7 @@ async fn set_blank_body(
 
 #[cfg(test)]
 mod tests {
+    use std::sync::Arc;
     use std::sync::atomic::{AtomicBool, AtomicI32, Ordering};
 
     use super::*;
@@ -203,17 +218,18 @@ mod tests {
     use tower::ServiceExt;
 
     /// Test double that records interactions instead of talking to Slint.
+    #[derive(Clone)]
     struct MockDashboardProxy {
-        activated_widget: AtomicI32,
-        blanked: AtomicBool,
+        activated_widget: Arc<AtomicI32>,
+        blanked: Arc<AtomicBool>,
     }
 
     impl MockDashboardProxy {
-        fn new() -> Arc<Self> {
-            Arc::new(Self {
-                activated_widget: AtomicI32::new(-1),
-                blanked: AtomicBool::new(false),
-            })
+        fn new() -> Self {
+            Self {
+                activated_widget: Arc::new(AtomicI32::new(-1)),
+                blanked: Arc::new(AtomicBool::new(false)),
+            }
         }
     }
 
@@ -231,7 +247,7 @@ mod tests {
         }
     }
 
-    fn test_app(proxy: Arc<dyn DashboardProxy>) -> Router {
+    fn test_app(proxy: MockDashboardProxy) -> Router {
         let mut name_to_id = HashMap::new();
         name_to_id.insert("clock".into(), 2);
         name_to_id.insert("weather".into(), 5);

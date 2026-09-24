@@ -1,5 +1,6 @@
 use std::cell::Cell;
 use std::collections::HashMap;
+use std::sync::Arc;
 
 use chrono::{Local, Locale};
 
@@ -144,12 +145,8 @@ impl WidgetController {
             );
             return;
         };
-        crate::remote::spawn(
-            config,
-            token,
-            self.widget_name_map(),
-            self.dashboard.clone(),
-        );
+        let proxy = Arc::new(crate::remote::SlintDashboardProxy::new(self.dashboard.clone()));
+        crate::remote::spawn(config, token, self.widget_name_map(), proxy);
     }
 
     /// Advance to the next widget, wrapping around.

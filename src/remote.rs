@@ -29,8 +29,8 @@ use crate::config::RemoteControlConfig;
 /// Abstract interface for driving the dashboard from the remote-control
 /// HTTP server.
 ///
-/// Production code uses [`SlintDashboardProxy`]; tests use
-/// [`MockDashboardProxy`].
+/// Production code uses the impl on `slint::Weak<crate::Dashboard>`; tests
+/// use [`MockDashboardProxy`].
 pub trait DashboardProxy: Send + Sync {
     /// Switch to the widget with the given id.
     fn activate_widget(&self, id: i32);
@@ -40,21 +40,9 @@ pub trait DashboardProxy: Send + Sync {
     fn get_blanked(&self) -> bool;
 }
 
-/// Production implementation that forwards calls to the Slint event loop.
-#[derive(Clone)]
-pub struct SlintDashboardProxy {
-    dashboard: slint::Weak<crate::Dashboard>,
-}
-
-impl SlintDashboardProxy {
-    pub fn new(dashboard: slint::Weak<crate::Dashboard>) -> Self {
-        Self { dashboard }
-    }
-}
-
-impl DashboardProxy for SlintDashboardProxy {
+impl DashboardProxy for slint::Weak<crate::Dashboard> {
     fn activate_widget(&self, id: i32) {
-        let handle = self.dashboard.clone();
+        let handle = self.clone();
         let _ = slint::invoke_from_event_loop(move || {
             if let Some(dashboard) = handle.upgrade() {
                 dashboard.invoke_activate_widget(id);
@@ -63,7 +51,7 @@ impl DashboardProxy for SlintDashboardProxy {
     }
 
     fn set_blanked(&self, value: bool) {
-        let handle = self.dashboard.clone();
+        let handle = self.clone();
         let _ = slint::invoke_from_event_loop(move || {
             if let Some(dashboard) = handle.upgrade() {
                 dashboard.set_blanked(value);
@@ -73,7 +61,7 @@ impl DashboardProxy for SlintDashboardProxy {
 
     fn get_blanked(&self) -> bool {
         let (tx, rx) = std::sync::mpsc::channel();
-        let handle = self.dashboard.clone();
+        let handle = self.clone();
         let _ = slint::invoke_from_event_loop(move || {
             let value = handle.upgrade().map(|d| d.get_blanked()).unwrap_or(false);
             let _ = tx.send(value);

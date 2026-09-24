@@ -5,6 +5,7 @@ use std::sync::Arc;
 use chrono::{Local, Locale};
 
 use crate::config::{Config, RemoteControlConfig};
+use crate::remote::DashboardProxy;
 
 /// Detect the user's locale from the usual POSIX environment variables.
 ///
@@ -145,7 +146,7 @@ impl WidgetController {
             );
             return;
         };
-        let proxy = Arc::new(crate::remote::SlintDashboardProxy::new(self.dashboard.clone()));
+        let proxy: Arc<dyn DashboardProxy> = Arc::new(self.dashboard.clone());
         crate::remote::spawn(config, token, self.widget_name_map(), proxy);
     }
 

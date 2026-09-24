@@ -18,7 +18,8 @@ TAB cycles through enabled widgets, q quits. Widgets that require configuration 
 cargo build          # Local dev build
 cargo run            # Run locally
 cargo fmt            # Format
-cargo clippy         # Lint
+cargo clippy --all-targets --all-features -- -D warnings  # Lint
+cargo test           # Run tests
 ```
 
 Cross-compile for Pi:

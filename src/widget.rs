@@ -71,6 +71,7 @@ pub struct WidgetController {
     current: Cell<usize>,
     locale: Locale,
     dashboard: slint::Weak<crate::Dashboard>,
+    start_blanked: bool,
 }
 
 impl WidgetController {
@@ -82,6 +83,7 @@ impl WidgetController {
         };
         self.current.set(0);
         dashboard.set_current_widget(self.widgets[0].id());
+        dashboard.set_blanked(self.start_blanked);
         for w in self.widgets.iter_mut() {
             w.init(&dashboard);
         }
@@ -242,6 +244,7 @@ pub fn create_widgets(
         current: Cell::new(0),
         locale: detect_locale(),
         dashboard,
+        start_blanked: config.start_blanked,
     };
     controller.spawn_remote_control(config.remote_control);
     controller
@@ -258,6 +261,7 @@ mod tests {
                 current: Cell::new(0),
                 locale: Locale::POSIX,
                 dashboard: slint::Weak::default(),
+                start_blanked: false,
             }
         }
     }

@@ -3,6 +3,7 @@ export component NowPlayingWidget inherits Rectangle {
     in property <string> track-artist: "";
     in property <string> track-album: "";
     in property <string> current-time: "00:00:00";
+    in property <string> current-date: "";
     in property <string> connection-status: "disconnected";
     in property <image> art-image;
 
@@ -13,6 +14,13 @@ export component NowPlayingWidget inherits Rectangle {
             text: root.current-time;
             color: white;
             font-size: 54px;
+            horizontal-alignment: center;
+        }
+
+        Text {
+            text: root.current-date;
+            color: #cccccc;
+            font-size: 32px;
             horizontal-alignment: center;
         }
 

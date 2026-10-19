@@ -1,5 +1,6 @@
 export component QuotesWidget inherits Rectangle {
     in property <string> current-time: "00:00:00";
+    in property <string> current-date: "";
     in property <string> quote-text: "";
     in property <string> quote-source: "";
 
@@ -13,6 +14,13 @@ export component QuotesWidget inherits Rectangle {
             text: root.current-time;
             color: white;
             font-size: 54px;
+            horizontal-alignment: center;
+        }
+
+        Text {
+            text: root.current-date;
+            color: #cccccc;
+            font-size: 32px;
             horizontal-alignment: center;
         }
 

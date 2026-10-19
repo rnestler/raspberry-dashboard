@@ -13,7 +13,8 @@ pub struct Config {
     /// Automatically advance to the next enabled widget every N seconds.
     pub widget_cycle_secs: Option<u64>,
     /// Start the dashboard with the screen blanked.
-    pub start_blanked: Option<bool>,
+    #[serde(default)]
+    pub start_blanked: bool,
 }
 
 #[derive(Debug, Deserialize)]
@@ -141,7 +142,7 @@ mod tests {
         "#;
         let cfg: Config = toml::from_str(toml).unwrap();
         assert_eq!(cfg.widget_cycle_secs, Some(30));
-        assert_eq!(cfg.start_blanked, Some(true));
+        assert!(cfg.start_blanked);
         assert!(cfg.snapcast.is_some());
         assert_eq!(cfg.snapcast.unwrap().host.to_string(), "127.0.0.1:1704");
         assert!(cfg.homeassistant.is_some());
@@ -194,6 +195,6 @@ mod tests {
         assert!(cfg.weather.is_none());
         assert!(cfg.remote_control.is_none());
         assert!(cfg.widget_cycle_secs.is_none());
-        assert!(cfg.start_blanked.is_none());
+        assert!(!cfg.start_blanked);
     }
 }

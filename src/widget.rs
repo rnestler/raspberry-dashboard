@@ -244,7 +244,7 @@ pub fn create_widgets(
         current: Cell::new(0),
         locale: detect_locale(),
         dashboard,
-        start_blanked: config.start_blanked.unwrap_or(false),
+        start_blanked: config.start_blanked,
     };
     controller.spawn_remote_control(config.remote_control);
     controller

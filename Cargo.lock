@@ -4024,6 +4024,7 @@ dependencies = [
  "snapcast-control",
  "tokio",
  "toml",
+ "tower",
 ]
 
 [[package]]

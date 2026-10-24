@@ -146,12 +146,7 @@ impl WidgetController {
             );
             return;
         };
-        crate::remote::spawn(
-            config,
-            token,
-            self.widget_name_map(),
-            self.dashboard.clone(),
-        );
+        crate::remote::spawn(config, token, self.widget_name_map(), self.dashboard.clone());
     }
 
     /// Advance to the next widget, wrapping around.

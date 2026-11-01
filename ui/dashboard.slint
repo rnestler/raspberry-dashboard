@@ -73,11 +73,13 @@ export component Dashboard inherits Window {
 
     if !root.blanked && root.current-widget == 0: HomeAssistantWidget {
         current-time: root.current-time;
+        current-date: root.current-date;
         sensors: root.sensors;
     }
 
     if !root.blanked && root.current-widget == 1: NowPlayingWidget {
         current-time: root.current-time;
+        current-date: root.current-date;
         track-title: root.track-title;
         track-artist: root.track-artist;
         track-album: root.track-album;
@@ -94,6 +96,7 @@ export component Dashboard inherits Window {
 
     if !root.blanked && root.current-widget == 3: DailyVerseWidget {
         current-time: root.current-time;
+        current-date: root.current-date;
         verse-text: root.verse-text;
         verse-reference: root.verse-reference;
         verse-version: root.verse-version;
@@ -101,12 +104,14 @@ export component Dashboard inherits Window {
 
     if !root.blanked && root.current-widget == 4: QuotesWidget {
         current-time: root.current-time;
+        current-date: root.current-date;
         quote-text: root.quote-text;
         quote-source: root.quote-source;
     }
 
     if !root.blanked && root.current-widget == 5: WeatherWidget {
         current-time: root.current-time;
+        current-date: root.current-date;
         weather-condition-symbol: root.weather-condition-symbol;
         weather-condition: root.weather-condition;
         weather-temp: root.weather-temp;

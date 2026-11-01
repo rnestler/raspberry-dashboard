@@ -1,5 +1,6 @@
 export component QuotesWidget inherits Rectangle {
     in property <string> current-time: "00:00:00";
+    in property <string> current-date: "";
     in property <string> quote-text: "";
     in property <string> quote-source: "";
 
@@ -16,6 +17,13 @@ export component QuotesWidget inherits Rectangle {
             horizontal-alignment: center;
         }
 
+        Text {
+            text: root.current-date;
+            color: #cccccc;
+            font-size: 32px;
+            horizontal-alignment: center;
+        }
+
         Rectangle { vertical-stretch: 1; }
 
         VerticalLayout {
@@ -25,7 +33,7 @@ export component QuotesWidget inherits Rectangle {
             Text {
                 text: root.quote-text != "" ? root.quote-text : "Zitat wird geladen…";
                 color: white;
-                font-size: 40px;
+                font-size: 56px;
                 wrap: word-wrap;
                 horizontal-alignment: center;
             }
@@ -33,7 +41,7 @@ export component QuotesWidget inherits Rectangle {
             if root.quote-source != "": Text {
                 text: "— " + root.quote-source;
                 color: #aaaaaa;
-                font-size: 30px;
+                font-size: 40px;
                 font-weight: 700;
                 horizontal-alignment: center;
             }

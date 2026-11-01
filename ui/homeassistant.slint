@@ -84,6 +84,7 @@ component SensorDisplay inherits Rectangle {
 
 export component HomeAssistantWidget inherits Rectangle {
     in property <string> current-time: "00:00:00";
+    in property <string> current-date: "";
     in property <[SensorData]> sensors;
 
     VerticalLayout {
@@ -93,6 +94,13 @@ export component HomeAssistantWidget inherits Rectangle {
             text: root.current-time;
             color: white;
             font-size: 54px;
+            horizontal-alignment: center;
+        }
+
+        Text {
+            text: root.current-date;
+            color: #cccccc;
+            font-size: 32px;
             horizontal-alignment: center;
         }
 
